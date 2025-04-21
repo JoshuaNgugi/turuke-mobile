@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:turuke_app/screens/home.dart';
+import 'package:turuke_app/screens/login.dart';
 import 'package:turuke_app/screens/splash.dart';
 
 void main() {
@@ -10,6 +11,7 @@ void main() {
       routes: {
         HomeScreen.routeName: (context) => HomeScreen(),
         SplashScreen.routeName: (context) => SplashScreen(),
+        LoginScreen.routeName: (context) => LoginScreen(),
       },
     ),
   );

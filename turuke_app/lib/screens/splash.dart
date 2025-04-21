@@ -20,7 +20,7 @@ class _SplashScreenState extends State<SplashScreen> {
       final token = null;
       Navigator.pushReplacementNamed(
         context,
-        token == null ? HomeScreen.routeName : LoginScreen.routeName,
+        token != null ? HomeScreen.routeName : LoginScreen.routeName,
       );
     });
   }
@@ -32,7 +32,11 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/images/big-chicken.png', height: 100, width: 100),
+            Image.asset(
+              'assets/images/big-chicken.png',
+              height: 100,
+              width: 100,
+            ),
             SizedBox(height: 16),
             Text(
               'Turuke',
