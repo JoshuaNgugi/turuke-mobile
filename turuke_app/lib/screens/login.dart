@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:turuke_app/screens/home.dart';
+import 'package:turuke_app/screens/registration.dart';
 
 class LoginScreen extends StatefulWidget {
   static const String routeName = '/log-in';
@@ -59,7 +60,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Text("Don't have an account? "),
                   TextButton(
-                    onPressed: () => Navigator.pushNamed(context, '/register'),
+                    onPressed:
+                        () => Navigator.pushNamed(
+                          context,
+                          RegistrationScreen.routeName,
+                        ),
                     child: Text('Create one'),
                   ),
                 ],
