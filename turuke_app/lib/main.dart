@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:turuke_app/screens/home.dart';
+import 'package:turuke_app/screens/splash.dart';
 
 void main() {
-  runApp(const MainApp());
+  runApp(
+    MaterialApp(
+      title: 'Turuke',
+      initialRoute: SplashScreen.routeName,
+      routes: {
+        HomeScreen.routeName: (context) => HomeScreen(),
+        SplashScreen.routeName: (context) => SplashScreen(),
+      },
+    ),
+  );
 }
 
 class MainApp extends StatelessWidget {
@@ -10,11 +21,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
+      home: Scaffold(body: Center(child: Text('Hello World!'))),
     );
   }
 }
