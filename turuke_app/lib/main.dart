@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:turuke_app/screens/home.dart';
 import 'package:turuke_app/screens/login.dart';
 import 'package:turuke_app/screens/registration.dart';
+import 'package:turuke_app/screens/registration_done.dart';
 import 'package:turuke_app/screens/splash.dart';
 import 'package:turuke_app/screens/verify_email.dart';
 
@@ -16,6 +17,7 @@ void main() {
         LoginScreen.routeName: (ctx) => LoginScreen(),
         RegistrationScreen.routeName: (ctx) => RegistrationScreen(),
         VerifyEmailScreen.routeName: (ctx) => VerifyEmailScreen(),
+        RegistrationDoneScreen.routeName: (ctx) => RegistrationDoneScreen(),
       },
     ),
   );
