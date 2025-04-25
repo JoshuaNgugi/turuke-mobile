@@ -3,6 +3,7 @@ import 'package:turuke_app/screens/home.dart';
 import 'package:turuke_app/screens/login.dart';
 import 'package:turuke_app/screens/registration.dart';
 import 'package:turuke_app/screens/splash.dart';
+import 'package:turuke_app/screens/verify_email.dart';
 
 void main() {
   runApp(
@@ -14,6 +15,7 @@ void main() {
         SplashScreen.routeName: (ctx) => SplashScreen(),
         LoginScreen.routeName: (ctx) => LoginScreen(),
         RegistrationScreen.routeName: (ctx) => RegistrationScreen(),
+        VerifyEmailScreen.routeName: (ctx) => VerifyEmailScreen(),
       },
     ),
   );

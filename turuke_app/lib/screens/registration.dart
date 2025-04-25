@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:turuke_app/screens/home.dart';
+import 'package:turuke_app/screens/verify_email.dart';
 
 class RegistrationScreen extends StatefulWidget {
   static const String routeName = '/register';
@@ -23,7 +24,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     if (_formKey.currentState!.validate() && _termsAccepted) {
       try {
         // TODO
-        Navigator.pushNamed(context, HomeScreen.routeName);
+        Navigator.pushNamed(context, VerifyEmailScreen.routeName);
       } catch (e) {
         ScaffoldMessenger.of(
           context,
