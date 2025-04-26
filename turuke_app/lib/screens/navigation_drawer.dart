@@ -1,0 +1,108 @@
+import 'package:flutter/material.dart';
+import 'package:turuke_app/screens/egg_collection.dart';
+import 'package:turuke_app/screens/home.dart';
+
+class AppNavigationDrawer extends StatelessWidget {
+  final String selectedRoute;
+  final Function(String) onRouteSelected;
+
+  const AppNavigationDrawer({
+    Key? key,
+    required this.selectedRoute,
+    required this.onRouteSelected,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(color: Colors.green),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  'Turuke',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Farm Management',
+                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.home,
+              color:
+                  selectedRoute == HomeScreen.routeName ? Colors.green : null,
+            ),
+            title: Text('Home'),
+            selected: selectedRoute == HomeScreen.routeName,
+            onTap: () => onRouteSelected(HomeScreen.routeName),
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.egg,
+              color:
+                  selectedRoute == EggCollectionScreen.routeName
+                      ? Colors.green
+                      : null,
+            ),
+            title: Text('Egg Collection'),
+            selected: selectedRoute == EggCollectionScreen.routeName,
+            onTap: () => onRouteSelected(EggCollectionScreen.routeName),
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.pets,
+              color: selectedRoute == '/flock-management' ? Colors.green : null,
+            ),
+            title: Text('Flock Management'),
+            selected: selectedRoute == '/flock-management',
+            onTap: () => onRouteSelected('/flock-management'),
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.vaccines,
+              color: selectedRoute == '/vaccination-log' ? Colors.green : null,
+            ),
+            title: Text('Vaccination Log'),
+            selected: selectedRoute == '/vaccination-log',
+            onTap: () => onRouteSelected('/vaccination-log'),
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.sick,
+              color: selectedRoute == '/disease-log' ? Colors.green : null,
+            ),
+            title: Text('Disease Log'),
+            selected: selectedRoute == '/disease-log',
+            onTap: () => onRouteSelected('/disease-log'),
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.logout, color: Colors.red),
+            title: Text('Logout'),
+            onTap: () async {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/sign-in',
+                (route) => false,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}

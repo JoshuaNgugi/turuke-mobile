@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
 import 'package:turuke_app/screens/login.dart';
+import 'package:turuke_app/screens/navigation_drawer.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String routeName = '/home';
@@ -26,6 +27,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchStats() async {}
 
+  void _onRouteSelected(String route) {
+    Navigator.pushNamed(context, route);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,6 +44,10 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ],
+      ),
+      drawer: AppNavigationDrawer(
+        selectedRoute: HomeScreen.routeName,
+        onRouteSelected: _onRouteSelected,
       ),
       body: ListView(
         padding: EdgeInsets.all(16.0),
@@ -132,18 +141,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.egg), label: 'Eggs'),
-          // Add more later
-        ],
-        currentIndex: 0,
-        onTap: (index) {
-          if (index == 1)
-            Navigator.pushNamed(context, EggCollectionScreen.routeName);
-        },
       ),
     );
   }
