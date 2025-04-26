@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:turuke_app/screens/disease_log.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
 import 'package:turuke_app/screens/flock_management.dart';
 import 'package:turuke_app/screens/home.dart';
@@ -6,6 +7,7 @@ import 'package:turuke_app/screens/login.dart';
 import 'package:turuke_app/screens/registration.dart';
 import 'package:turuke_app/screens/registration_done.dart';
 import 'package:turuke_app/screens/splash.dart';
+import 'package:turuke_app/screens/vaccination_log.dart';
 import 'package:turuke_app/screens/verify_email.dart';
 
 void main() {
@@ -22,6 +24,8 @@ void main() {
         RegistrationDoneScreen.routeName: (ctx) => RegistrationDoneScreen(),
         EggCollectionScreen.routeName: (ctx) => EggCollectionScreen(),
         FlockManagementScreen.routeName: (ctx) => FlockManagementScreen(),
+        VaccinationLogScreen.routeName: (ctx) => VaccinationLogScreen(),
+        DiseaseLogScreen.routeName: (ctx) => DiseaseLogScreen(),
       },
     ),
   );

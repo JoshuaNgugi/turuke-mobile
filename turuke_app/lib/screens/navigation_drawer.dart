@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:turuke_app/screens/disease_log.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
 import 'package:turuke_app/screens/flock_management.dart';
 import 'package:turuke_app/screens/home.dart';
+import 'package:turuke_app/screens/login.dart';
+import 'package:turuke_app/screens/vaccination_log.dart';
 
 class AppNavigationDrawer extends StatelessWidget {
   final String selectedRoute;
@@ -66,7 +69,10 @@ class AppNavigationDrawer extends StatelessWidget {
           ListTile(
             leading: Icon(
               Icons.pets,
-              color: selectedRoute == FlockManagementScreen.routeName ? Colors.purple : null,
+              color:
+                  selectedRoute == FlockManagementScreen.routeName
+                      ? Colors.purple
+                      : null,
             ),
             title: Text('Flock Management'),
             selected: selectedRoute == FlockManagementScreen.routeName,
@@ -75,20 +81,26 @@ class AppNavigationDrawer extends StatelessWidget {
           ListTile(
             leading: Icon(
               Icons.vaccines,
-              color: selectedRoute == '/vaccination-log' ? Colors.purple : null,
+              color:
+                  selectedRoute == VaccinationLogScreen.routeName
+                      ? Colors.purple
+                      : null,
             ),
             title: Text('Vaccination Log'),
-            selected: selectedRoute == '/vaccination-log',
-            onTap: () => onRouteSelected('/vaccination-log'),
+            selected: selectedRoute == VaccinationLogScreen.routeName,
+            onTap: () => onRouteSelected(VaccinationLogScreen.routeName),
           ),
           ListTile(
             leading: Icon(
               Icons.sick,
-              color: selectedRoute == '/disease-log' ? Colors.purple : null,
+              color:
+                  selectedRoute == DiseaseLogScreen.routeName
+                      ? Colors.purple
+                      : null,
             ),
             title: Text('Disease Log'),
-            selected: selectedRoute == '/disease-log',
-            onTap: () => onRouteSelected('/disease-log'),
+            selected: selectedRoute == DiseaseLogScreen.routeName,
+            onTap: () => onRouteSelected(DiseaseLogScreen.routeName),
           ),
           Divider(),
           ListTile(
@@ -97,7 +109,7 @@ class AppNavigationDrawer extends StatelessWidget {
             onTap: () async {
               Navigator.pushNamedAndRemoveUntil(
                 context,
-                '/sign-in',
+                LoginScreen.routeName,
                 (route) => false,
               );
             },
