@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
+import 'package:turuke_app/screens/flock_management.dart';
 import 'package:turuke_app/screens/home.dart';
 
 class AppNavigationDrawer extends StatelessWidget {
@@ -19,7 +20,7 @@ class AppNavigationDrawer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(color: Colors.green),
+            decoration: BoxDecoration(color: Colors.purple),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
@@ -44,7 +45,7 @@ class AppNavigationDrawer extends StatelessWidget {
             leading: Icon(
               Icons.home,
               color:
-                  selectedRoute == HomeScreen.routeName ? Colors.green : null,
+                  selectedRoute == HomeScreen.routeName ? Colors.purple : null,
             ),
             title: Text('Home'),
             selected: selectedRoute == HomeScreen.routeName,
@@ -55,7 +56,7 @@ class AppNavigationDrawer extends StatelessWidget {
               Icons.egg,
               color:
                   selectedRoute == EggCollectionScreen.routeName
-                      ? Colors.green
+                      ? Colors.purple
                       : null,
             ),
             title: Text('Egg Collection'),
@@ -65,16 +66,16 @@ class AppNavigationDrawer extends StatelessWidget {
           ListTile(
             leading: Icon(
               Icons.pets,
-              color: selectedRoute == '/flock-management' ? Colors.green : null,
+              color: selectedRoute == FlockManagementScreen.routeName ? Colors.purple : null,
             ),
             title: Text('Flock Management'),
-            selected: selectedRoute == '/flock-management',
-            onTap: () => onRouteSelected('/flock-management'),
+            selected: selectedRoute == FlockManagementScreen.routeName,
+            onTap: () => onRouteSelected(FlockManagementScreen.routeName),
           ),
           ListTile(
             leading: Icon(
               Icons.vaccines,
-              color: selectedRoute == '/vaccination-log' ? Colors.green : null,
+              color: selectedRoute == '/vaccination-log' ? Colors.purple : null,
             ),
             title: Text('Vaccination Log'),
             selected: selectedRoute == '/vaccination-log',
@@ -83,7 +84,7 @@ class AppNavigationDrawer extends StatelessWidget {
           ListTile(
             leading: Icon(
               Icons.sick,
-              color: selectedRoute == '/disease-log' ? Colors.green : null,
+              color: selectedRoute == '/disease-log' ? Colors.purple : null,
             ),
             title: Text('Disease Log'),
             selected: selectedRoute == '/disease-log',

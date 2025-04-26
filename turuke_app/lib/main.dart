@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
+import 'package:turuke_app/screens/flock_management.dart';
 import 'package:turuke_app/screens/home.dart';
 import 'package:turuke_app/screens/login.dart';
 import 'package:turuke_app/screens/registration.dart';
@@ -20,6 +21,7 @@ void main() {
         VerifyEmailScreen.routeName: (ctx) => VerifyEmailScreen(),
         RegistrationDoneScreen.routeName: (ctx) => RegistrationDoneScreen(),
         EggCollectionScreen.routeName: (ctx) => EggCollectionScreen(),
+        FlockManagementScreen.routeName: (ctx) => FlockManagementScreen(),
       },
     ),
   );

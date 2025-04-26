@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:turuke_app/screens/navigation_drawer.dart';
 
 class EggCollectionScreen extends StatefulWidget {
   static const String routeName = '/egg-collection';
@@ -21,10 +22,18 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
 
   Future<void> _save() async {}
 
+  void _onRouteSelected(String route) {
+    Navigator.pushNamed(context, route);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Egg Collection')),
+      drawer: AppNavigationDrawer(
+        selectedRoute: EggCollectionScreen.routeName,
+        onRouteSelected: _onRouteSelected,
+      ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
         child: Form(

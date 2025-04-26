@@ -36,14 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Turuke - Farm Stats'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () async {
-              Navigator.pushReplacementNamed(context, LoginScreen.routeName);
-            },
-          ),
-        ],
       ),
       drawer: AppNavigationDrawer(
         selectedRoute: HomeScreen.routeName,
