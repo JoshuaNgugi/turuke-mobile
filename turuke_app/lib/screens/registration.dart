@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/home.dart';
 import 'package:turuke_app/screens/verify_email.dart';
+import 'package:provider/provider.dart';
 
 class RegistrationScreen extends StatefulWidget {
   static const String routeName = '/register';
@@ -19,21 +21,36 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       _farmName = '',
       _password = '';
   bool _termsAccepted = false;
+  bool _isLoading = false;
+  String? _error;
 
   Future<void> _register() async {
-    if (_formKey.currentState!.validate() && _termsAccepted) {
-      try {
-        // TODO
-        Navigator.pushNamed(context, VerifyEmailScreen.routeName);
-      } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
-    } else if (!_termsAccepted) {
+    if (!_termsAccepted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Please accept Terms of Service')));
+    }
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      await context.read<AuthProvider>().register(
+        firstName: _firstName,
+        lastName: _lastName,
+        email: _email,
+        farmName: _farmName,
+        password: _password,
+      );
+      Navigator.pushNamed(context, VerifyEmailScreen.routeName);
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+      });
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -102,10 +119,23 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 ],
               ),
               SizedBox(height: 16),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton(onPressed: _register, child: Text('Continue')),
+                  _isLoading
+                      ? const CircularProgressIndicator()
+                      : ElevatedButton(
+                        onPressed: _register,
+                        child: const Text('Register'),
+                      ),
                   SizedBox(width: 16),
                   TextButton(
                     onPressed: () => Navigator.pop(context),

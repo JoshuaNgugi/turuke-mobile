@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/home.dart';
 import 'package:turuke_app/screens/registration_done.dart';
+import 'package:provider/provider.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   static const String routeName = '/verify-email';
@@ -14,6 +16,8 @@ class VerifyEmailScreen extends StatefulWidget {
 class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   String _code = '';
   bool _isOnline = true;
+  bool _isLoading = false;
+  String? _error;
 
   @override
   void initState() {
@@ -28,7 +32,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Future<void> _verify() async {
     if (_code.length == 6 && _isOnline) {
       try {
-        // TODO
+        await context.read<AuthProvider>().verifyEmail(_code);
         Navigator.pushNamed(context, RegistrationDoneScreen.routeName);
       } catch (e) {
         ScaffoldMessenger.of(
