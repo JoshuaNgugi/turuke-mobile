@@ -22,8 +22,16 @@ dev_dependencies:
   shared_preferences: ^2.0.0
   path_provider: ^2.0.0
   logger: ^2.5.0
+  flutter_launcher_icons: "^0.14.3"
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/big-chicken.png"
+  web:
+    generate: true
