@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -37,11 +38,21 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> login(String email, String password) async {
-    final response = await http.post(
-      Uri.parse('${Constants.API_BASE_URL}/auth/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
-    );
+    final response = await http
+        .post(
+          Uri.parse('${Constants.API_BASE_URL}/auth/login'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'email': email, 'password': password}),
+        )
+        .timeout(
+          const Duration(seconds: 15),
+          onTimeout: () {
+            // Return a response to trigger the TimeoutException
+            throw TimeoutException(
+              'The login request took too long to respond. Please try again later.',
+            );
+          },
+        );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       _token = data['token'];
