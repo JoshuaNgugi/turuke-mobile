@@ -133,7 +133,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       .map(
                                         (e) => FlSpot(
                                           e.key.toDouble(),
-                                          e.value['yield']?.toDouble() ?? 0,
+                                          double.tryParse(e.value['yield']) ??
+                                              0,
                                         ),
                                       )
                                       .toList(),
