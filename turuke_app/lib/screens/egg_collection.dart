@@ -1,5 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as path;
+import 'package:provider/provider.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
+import 'package:uuid/uuid.dart';
 
 class EggCollectionScreen extends StatefulWidget {
   static const String routeName = '/egg-collection';
@@ -14,13 +23,79 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
   int? _flockId;
   DateTime _date = DateTime.now();
   int _wholeEggs = 0, _brokenEggs = 0;
-  List<Map<String, dynamic>> _flocks = [
-    {'id': 1, 'breed': 'Isa Brown'},
-    {'id': 2, 'breed': 'White Leghorn'},
-    {'id': 3, 'breed': 'Rhode Island Red'},
-  ];
+  List<Map<String, dynamic>> _flocks = [];
+  Database? _db;
 
-  Future<void> _save() async {}
+  @override
+  void initState() {
+    super.initState();
+    _initDb();
+    _fetchFlocks();
+  }
+
+  Future<void> _initDb() async {
+    _db = await openDatabase(
+      path.join(await getDatabasesPath(), 'turuke.db'),
+      onCreate:
+          (db, version) => db.execute(
+            'CREATE TABLE egg_pending(id TEXT PRIMARY KEY, flock_id INTEGER, collection_date TEXT, whole_eggs INTEGER, broken_eggs INTEGER)',
+          ),
+      version: 1,
+    );
+  }
+
+  Future<void> _fetchFlocks() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    try {
+      final response = await http.get(
+        Uri.parse(
+          '${Constants.API_BASE_URL}/flocks?farm_id=${authProvider.user!['farm_id']}',
+        ),
+        headers: await authProvider.getHeaders(),
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          _flocks = List<Map<String, dynamic>>.from(jsonDecode(response.body));
+        });
+      }
+    } catch (e) {
+      // Handle offline
+    }
+  }
+
+  Future<void> _save() async {
+    if (_formKey.currentState!.validate() && _flockId != null) {
+      final data = {
+        'flock_id': _flockId,
+        'collection_date': _date.toIso8601String().substring(0, 10),
+        'whole_eggs': _wholeEggs,
+        'broken_eggs': _brokenEggs,
+      };
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      try {
+        final response = await http.post(
+          Uri.parse('${Constants.API_BASE_URL}/egg-production'),
+          headers: await authProvider.getHeaders(),
+          body: jsonEncode(data),
+        );
+        if (response.statusCode == 201) {
+          Navigator.pop(context);
+        } else {
+          throw Exception('Failed to save');
+        }
+      } catch (e) {
+        await _db!.insert('egg_pending', {
+          'id': Uuid().v4(),
+          ...data,
+          'collection_date': data['collection_date'],
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Saved offline, will sync later')),
+        );
+        Navigator.pop(context);
+      }
+    }
+  }
 
   void _onRouteSelected(String route) {
     Navigator.pushNamed(context, route);
