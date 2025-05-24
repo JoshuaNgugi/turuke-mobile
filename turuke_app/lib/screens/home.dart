@@ -76,7 +76,11 @@ class _HomeScreenState extends State<HomeScreen> {
         headers: headers,
       );
       if (chickenStatusRes.statusCode == 200) {
-        _chickenStatus = jsonDecode(chickenStatusRes.body);
+        final decoded = jsonDecode(chickenStatusRes.body);
+        _chickenStatus = {
+          for (var entry in decoded.entries)
+            entry.key: int.tryParse(entry.value.toString()) ?? 0,
+        };
       }
     } catch (e) {
       // Handle offline or errors
