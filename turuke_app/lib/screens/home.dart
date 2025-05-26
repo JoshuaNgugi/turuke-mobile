@@ -95,6 +95,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     return Scaffold(
       appBar: AppBar(title: Text('Turuke - Farm Stats')),
       drawer: AppNavigationDrawer(
@@ -131,30 +133,66 @@ class _HomeScreenState extends State<HomeScreen> {
                           lineBarsData: [
                             LineChartBarData(
                               spots:
-                                  _monthlyYield
-                                      .asMap()
-                                      .entries
-                                      .map(
-                                        (e) => FlSpot(
-                                          e.key.toDouble(),
-                                          double.tryParse(e.value['yield']) ??
-                                              0,
-                                        ),
-                                      )
-                                      .toList(),
-                              isCurved: true,
+                                  _monthlyYield.map((entry) {
+                                    final day = int.parse(
+                                      entry['collection_date']
+                                          .split('-')[2]
+                                          .split('T')[0],
+                                    );
+                                    final totalEggs =
+                                        (entry['whole_eggs'] ?? 0) +
+                                        (entry['broken_eggs'] ?? 0);
+                                    return FlSpot(
+                                      day.toDouble(),
+                                      totalEggs.toDouble(),
+                                    );
+                                  }).toList(),
+                              dotData: FlDotData(show: true),
                             ),
                           ],
                           titlesData: FlTitlesData(
                             bottomTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                getTitlesWidget:
-                                    (value, meta) =>
-                                        Text('${value.toInt() + 1}'),
+                                getTitlesWidget: (value, met) {
+                                  final day = value.toInt();
+                                  day >= 1 && day <= daysInMonth ? '$day' : '';
+                                  return Text('${value.toInt() + 1}');
+                                },
+                                reservedSize: 22,
                               ),
                             ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget:
+                                    (value, meta) => Text('${value.toInt()}'),
+                                reservedSize: 28,
+                              ),
+                            ),
+                            topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
                           ),
+                          gridData: FlGridData(show: true),
+                          borderData: FlBorderData(show: true),
+                          minX: 1,
+                          maxX: daysInMonth.toDouble(),
+                          minY: 0,
+                          maxY:
+                              (_monthlyYield
+                                          .map(
+                                            (e) =>
+                                                (e['whole_eggs'] ?? 0) +
+                                                (e['broken_eggs'] ?? 0),
+                                          )
+                                          .fold(0, (a, b) => a > b ? a : b)
+                                          .toDouble() *
+                                      1.2)
+                                  .ceilToDouble(),
                         ),
                       ),
                     ),
