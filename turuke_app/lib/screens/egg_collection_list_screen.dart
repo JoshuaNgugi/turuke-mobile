@@ -6,9 +6,9 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/datasources/egg_collection_datasource.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
-import 'package:intl/intl.dart';
 
 class EggCollectionListScreen extends StatefulWidget {
   static const String routeName = '/egg-collection-list';
@@ -23,6 +23,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
   List<Map<String, dynamic>> _eggCollections = [];
   List<Map<String, dynamic>> _flocks = [];
   bool _isLoading = true;
+  final int _rowsPerPage = 10;
 
   @override
   void initState() {
@@ -83,8 +84,9 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dataSource = EggCollectionDataSource(eggCollections: _eggCollections);
     return Scaffold(
-      appBar: AppBar(title: const Text('Egg Collection')),
+      appBar: AppBar(title: const Text('Egg Collections')),
       drawer: AppNavigationDrawer(
         selectedRoute: EggCollectionListScreen.routeName,
         onRouteSelected: _onRouteSelected,
@@ -95,37 +97,21 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
               : _eggCollections.isEmpty
               ? const Center(child: Text('No egg collections found'))
               : SingleChildScrollView(
-                scrollDirection: Axis.vertical,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(
-                        label: Text(
-                          'Date',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(label: Text('Whole Eggs')),
-                      DataColumn(label: Text('Broken Eggs')),
-                      DataColumn(label: Text('Total')),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: MediaQuery.of(context).size.width,
+                  ),
+                  child: PaginatedDataTable(
+                    columns: [
+                      const DataColumn(label: Text('Date')),
+                      const DataColumn(label: Text('Whole Eggs')),
+                      const DataColumn(label: Text('Broken Eggs')),
+                      const DataColumn(label: Text('Total')),
                     ],
-                    rows:
-                        _eggCollections.map((entry) {
-                          final total =
-                              (entry['whole_eggs'] ?? 0) +
-                              (entry['broken_eggs'] ?? 0);
-                          return DataRow(
-                            cells: [
-                              DataCell(
-                                Text(_formatDate(entry['collection_date'])),
-                              ),
-                              DataCell(Text('${entry['whole_eggs'] ?? 0}')),
-                              DataCell(Text('${entry['broken_eggs'] ?? 0}')),
-                              DataCell(Text('$total')),
-                            ],
-                          );
-                        }).toList(),
+                    source: dataSource,
+                    rowsPerPage: _rowsPerPage,
+                    columnSpacing: 16,
+                    horizontalMargin: 16,
                   ),
                 ),
               ),
@@ -135,15 +121,5 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
         child: const Icon(Icons.add),
       ),
     );
-  }
-
-  String _formatDate(String? isoDate) {
-    if (isoDate == null || isoDate.isEmpty) return '';
-    try {
-      final dateTime = DateTime.parse(isoDate);
-      return DateFormat('d MMMM, yyyy').format(dateTime);
-    } catch (e) {
-      return isoDate;
-    }
   }
 }

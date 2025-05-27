@@ -1,0 +1,33 @@
+import 'package:flutter/material.dart';
+import 'package:turuke_app/utils/string_utils.dart';
+
+class EggCollectionDataSource extends DataTableSource {
+  final List<Map<String, dynamic>> _eggCollections;
+
+  EggCollectionDataSource({required List<Map<String, dynamic>> eggCollections})
+    : _eggCollections = eggCollections;
+
+  @override
+  DataRow? getRow(int index) {
+    if (index >= _eggCollections.length) return null;
+    final entry = _eggCollections[index];
+    final total = (entry['whole_eggs'] ?? 0) + (entry['broken_eggs'] ?? 0);
+    return DataRow(
+      cells: [
+        DataCell(Text(StringUtils.formatDate(entry['collection_date']))),
+        DataCell(Text('${entry['whole_eggs'] ?? 0}')),
+        DataCell(Text('${entry['broken_eggs'] ?? 0}')),
+        DataCell(Text('$total')),
+      ],
+    );
+  }
+
+  @override
+  bool get isRowCountApproximate => false;
+
+  @override
+  int get rowCount => _eggCollections.length;
+
+  @override
+  int get selectedRowCount => 0;
+}
