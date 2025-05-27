@@ -8,7 +8,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
-import 'package:uuid/uuid.dart';
+import 'package:intl/intl.dart';
 
 class EggCollectionListScreen extends StatefulWidget {
   static const String routeName = '/egg-collection-list';
@@ -100,7 +100,12 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
                   scrollDirection: Axis.horizontal,
                   child: DataTable(
                     columns: const [
-                      DataColumn(label: Text('Date')),
+                      DataColumn(
+                        label: Text(
+                          'Date',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
                       DataColumn(label: Text('Whole Eggs')),
                       DataColumn(label: Text('Broken Eggs')),
                       DataColumn(label: Text('Total')),
@@ -112,7 +117,9 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
                               (entry['broken_eggs'] ?? 0);
                           return DataRow(
                             cells: [
-                              DataCell(Text(entry['collection_date'] ?? '')),
+                              DataCell(
+                                Text(_formatDate(entry['collection_date'])),
+                              ),
                               DataCell(Text('${entry['whole_eggs'] ?? 0}')),
                               DataCell(Text('${entry['broken_eggs'] ?? 0}')),
                               DataCell(Text('$total')),
@@ -128,5 +135,15 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  String _formatDate(String? isoDate) {
+    if (isoDate == null || isoDate.isEmpty) return '';
+    try {
+      final dateTime = DateTime.parse(isoDate);
+      return DateFormat('d MMMM, yyyy').format(dateTime);
+    } catch (e) {
+      return isoDate;
+    }
   }
 }
