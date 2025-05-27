@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/disease_log.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
+import 'package:turuke_app/screens/egg_collection_list_screen.dart';
 import 'package:turuke_app/screens/flock_management.dart';
 import 'package:turuke_app/screens/home.dart';
 import 'package:turuke_app/screens/login.dart';
@@ -45,15 +46,16 @@ class _TurukeAppState extends State<TurukeApp> {
         initialRoute: SplashScreen.routeName,
         routes: {
           HomeScreen.routeName: (ctx) => HomeScreen(),
-        SplashScreen.routeName: (ctx) => SplashScreen(),
-        LoginScreen.routeName: (ctx) => LoginScreen(),
-        RegistrationScreen.routeName: (ctx) => RegistrationScreen(),
-        VerifyEmailScreen.routeName: (ctx) => VerifyEmailScreen(),
-        RegistrationDoneScreen.routeName: (ctx) => RegistrationDoneScreen(),
-        EggCollectionScreen.routeName: (ctx) => EggCollectionScreen(),
-        FlockManagementScreen.routeName: (ctx) => FlockManagementScreen(),
-        VaccinationLogScreen.routeName: (ctx) => VaccinationLogScreen(),
-        DiseaseLogScreen.routeName: (ctx) => DiseaseLogScreen(),
+          SplashScreen.routeName: (ctx) => SplashScreen(),
+          LoginScreen.routeName: (ctx) => LoginScreen(),
+          RegistrationScreen.routeName: (ctx) => RegistrationScreen(),
+          VerifyEmailScreen.routeName: (ctx) => VerifyEmailScreen(),
+          RegistrationDoneScreen.routeName: (ctx) => RegistrationDoneScreen(),
+          EggCollectionScreen.routeName: (ctx) => EggCollectionScreen(),
+          FlockManagementScreen.routeName: (ctx) => FlockManagementScreen(),
+          VaccinationLogScreen.routeName: (ctx) => VaccinationLogScreen(),
+          DiseaseLogScreen.routeName: (ctx) => DiseaseLogScreen(),
+          EggCollectionListScreen.routeName: (ctx) => EggCollectionListScreen(),
         },
       ),
     );

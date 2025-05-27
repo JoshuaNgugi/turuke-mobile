@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:turuke_app/screens/disease_log.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
+import 'package:turuke_app/screens/egg_collection_list_screen.dart';
 import 'package:turuke_app/screens/flock_management.dart';
 import 'package:turuke_app/screens/home.dart';
 import 'package:turuke_app/screens/login.dart';
@@ -63,8 +64,8 @@ class AppNavigationDrawer extends StatelessWidget {
                       : null,
             ),
             title: Text('Egg Collection'),
-            selected: selectedRoute == EggCollectionScreen.routeName,
-            onTap: () => onRouteSelected(EggCollectionScreen.routeName),
+            selected: selectedRoute == EggCollectionListScreen.routeName,
+            onTap: () => onRouteSelected(EggCollectionListScreen.routeName),
           ),
           ListTile(
             leading: Icon(
