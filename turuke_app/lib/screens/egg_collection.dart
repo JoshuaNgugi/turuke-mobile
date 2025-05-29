@@ -79,7 +79,13 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
           body: jsonEncode(data),
         );
         if (response.statusCode == 201) {
-          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Successfully saved collection for ${_date.toIso8601String().substring(0, 10)}',
+              ),
+            ),
+          );
         } else {
           throw Exception('Failed to save');
         }
@@ -97,17 +103,15 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
     }
   }
 
-  void _onRouteSelected(String route) {
-    Navigator.pushNamed(context, route);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Egg Collection')),
-      drawer: AppNavigationDrawer(
-        selectedRoute: EggCollectionScreen.routeName,
-        onRouteSelected: _onRouteSelected,
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: Icon(Icons.arrow_back),
+        ),
+        title: Text('Egg Collection'),
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
@@ -115,21 +119,22 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
           key: _formKey,
           child: Column(
             children: [
-              DropdownButton<int>(
-                hint: Text('Select Flock'),
-                value: _flockId,
+              DropdownButtonFormField<int>(
+                decoration: const InputDecoration(labelText: 'Select Flock'),
                 items:
                     _flocks
-                        .map<DropdownMenuItem<int>>(
-                          (f) => DropdownMenuItem<int>(
+                        .where((f) => f['status'] == 1) // Active flocks only
+                        .map(
+                          (f) => DropdownMenuItem(
                             value: f['id'] as int,
                             child: Text(f['breed']),
                           ),
                         )
                         .toList(),
-
                 onChanged: (value) => setState(() => _flockId = value),
+                validator: (value) => value == null ? 'Required' : null,
               ),
+              const SizedBox(height: 10),
               TextFormField(
                 decoration: InputDecoration(labelText: 'Date'),
                 readOnly: true,
@@ -146,6 +151,7 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
                   text: _date.toIso8601String().substring(0, 10),
                 ),
               ),
+              const SizedBox(height: 10),
               TextFormField(
                 decoration: InputDecoration(labelText: 'Whole Eggs'),
                 keyboardType: TextInputType.number,
@@ -154,6 +160,7 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
                     (value) =>
                         setState(() => _wholeEggs = int.tryParse(value) ?? 0),
               ),
+              const SizedBox(height: 10),
               TextFormField(
                 decoration: InputDecoration(labelText: 'Broken Eggs'),
                 keyboardType: TextInputType.number,

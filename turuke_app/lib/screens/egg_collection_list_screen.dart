@@ -8,6 +8,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/datasources/egg_collection_datasource.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
+import 'package:turuke_app/screens/egg_collection.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
 
 class EggCollectionListScreen extends StatefulWidget {
@@ -116,7 +117,10 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
                 ),
               ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _flocks.isEmpty ? null : () {},
+        onPressed:
+            _flocks.isEmpty
+                ? null
+                : () => _onRouteSelected(EggCollectionScreen.routeName),
         tooltip: 'Add Egg Collection',
         child: const Icon(Icons.add),
       ),
