@@ -1,5 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
+import 'package:uuid/uuid.dart';
 
 class VaccinationLogScreen extends StatefulWidget {
   static const String routeName = '/vaccination-log';
@@ -12,11 +20,37 @@ class VaccinationLogScreen extends StatefulWidget {
 
 class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
   List<Map<String, dynamic>> _vaccinations = [];
-  List<Map<String, dynamic>> _flocks = [
-    {'id': 1, 'breed': 'Isa Brown'},
-    {'id': 2, 'breed': 'White Leghorn'},
-    {'id': 3, 'breed': 'Rhode Island Red'},
-  ];
+  List<Map<String, dynamic>> _flocks = [];
+  Database? _db;
+
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+    _fetchVaccinations();
+  }
+
+  Future<void> _fetchData() async {
+    setState(() => _isLoading = true);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final headers = await authProvider.getHeaders();
+    final farmId = authProvider.user!['farm_id'];
+
+    try {
+      // Fetch flocks
+      final flocksRes = await http.get(
+        Uri.parse('${Constants.API_BASE_URL}/flocks?farm_id=$farmId'),
+        headers: headers,
+      );
+      if (flocksRes.statusCode == 200) {
+        _flocks = List<Map<String, dynamic>>.from(jsonDecode(flocksRes.body));
+      }
+    } catch (e) {
+      // Offline fallback
+    }
+  }
 
   Future<void> _addVaccination({
     required int flockId,
@@ -33,14 +67,14 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
     try {} catch (e) {}
   }
 
-  void _showAddVaccinationDialog() {
+  Future<void> _showAddVaccinationDialog() async {
     final _formKey = GlobalKey<FormState>();
     int? _flockId;
     String _vaccineName = '';
     DateTime _vaccinationDate = DateTime.now();
     String _notes = '';
 
-    showDialog(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder:
           (context) => AlertDialog(
@@ -123,6 +157,57 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
             ],
           ),
     );
+
+    if (result != null) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final data = {'farm_id': authProvider.user!['farm_id'], ...result};
+      try {
+        final response = await http.post(
+          Uri.parse('${Constants.API_BASE_URL}/vaccinations'),
+          headers: await authProvider.getHeaders(),
+          body: jsonEncode(data),
+        );
+        if (response.statusCode == 201) {
+          _fetchVaccinations();
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Saved successfully')));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Save failed. Try again later')),
+          );
+          throw Exception('Failed to save');
+        }
+      } catch (e) {
+        await _db!.insert('flock_pending', {'id': const Uuid().v4(), ...data});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Saved offline, will sync later')),
+        );
+        _fetchVaccinations();
+      }
+    }
+  }
+
+  Future<void> _fetchVaccinations() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    try {
+      final response = await http.get(
+        Uri.parse(
+          '${Constants.API_BASE_URL}/vaccinations?farm_id=${authProvider.user!['farm_id']}',
+        ),
+        headers: await authProvider.getHeaders(),
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          _vaccinations = List<Map<String, dynamic>>.from(
+            jsonDecode(response.body),
+          );
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _onRouteSelected(String route) {
@@ -137,20 +222,23 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
         selectedRoute: VaccinationLogScreen.routeName,
         onRouteSelected: _onRouteSelected,
       ),
-      body: ListView.builder(
-        padding: EdgeInsets.all(16.0),
-        itemCount: _vaccinations.length,
-        itemBuilder: (context, index) {
-          final vaccination = _vaccinations[index];
-          return ListTile(
-            leading: Icon(Icons.vaccines),
-            title: Text(vaccination['vaccine_name']),
-            subtitle: Text(
-              'Flock: ${vaccination['flock_id']} | Date: ${vaccination['vaccination_date']}',
-            ),
-          );
-        },
-      ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                padding: EdgeInsets.all(16.0),
+                itemCount: _vaccinations.length,
+                itemBuilder: (context, index) {
+                  final vaccination = _vaccinations[index];
+                  return ListTile(
+                    leading: Icon(Icons.vaccines),
+                    title: Text(vaccination['vaccine_name']),
+                    subtitle: Text(
+                      'Flock: ${vaccination['flock_id']} | Date: ${vaccination['vaccination_date']}',
+                    ),
+                  );
+                },
+              ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddVaccinationDialog,
         child: Icon(Icons.add),
