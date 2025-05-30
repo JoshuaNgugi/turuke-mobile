@@ -9,6 +9,7 @@ import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
 import 'package:turuke_app/utils/string_utils.dart';
 import 'package:uuid/uuid.dart';
+import 'package:path/path.dart' as path;
 
 class VaccinationLogScreen extends StatefulWidget {
   static const String routeName = '/vaccination-log';
@@ -29,8 +30,20 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
   @override
   void initState() {
     super.initState();
+    _initDb();
     _fetchData();
     _fetchVaccinations();
+  }
+
+  Future<void> _initDb() async {
+    _db = await openDatabase(
+      path.join(await getDatabasesPath(), 'turuke.db'),
+      onCreate:
+          (db, version) => db.execute(
+            'CREATE TABLE vaccination_pending(id TEXT PRIMARY KEY, flock_id INTEGER, vaccination_date TEXT, notes TEXT)',
+          ),
+      version: 1,
+    );
   }
 
   Future<void> _fetchData() async {
@@ -167,7 +180,10 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
           throw Exception('Failed to save');
         }
       } catch (e) {
-        await _db!.insert('vacination_pending', {'id': const Uuid().v4(), ...data});
+        await _db!.insert('vaccination_pending', {
+          'id': const Uuid().v4(),
+          ...data,
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Saved offline, will sync later')),
         );
