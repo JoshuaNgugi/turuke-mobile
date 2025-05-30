@@ -48,23 +48,8 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
         _flocks = List<Map<String, dynamic>>.from(jsonDecode(flocksRes.body));
       }
     } catch (e) {
-      // Offline fallback
+      setState(() => _isLoading = false);
     }
-  }
-
-  Future<void> _addVaccination({
-    required int flockId,
-    required String vaccineName,
-    required DateTime vaccinationDate,
-    String? notes,
-  }) async {
-    final data = {
-      'flock_id': flockId,
-      'vaccine_name': vaccineName,
-      'vaccination_date': vaccinationDate.toIso8601String().substring(0, 10),
-      if (notes != null) 'notes': notes,
-    };
-    try {} catch (e) {}
   }
 
   Future<void> _showAddVaccinationDialog() async {
@@ -143,13 +128,15 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate() && _flockId != null) {
-                    _addVaccination(
-                      flockId: _flockId!,
-                      vaccineName: _vaccineName,
-                      vaccinationDate: _vaccinationDate,
-                      notes: _notes.isEmpty ? null : _notes,
-                    );
-                    Navigator.pop(context);
+                    Navigator.pop(context, {
+                      // flock_id, vaccine_name, vaccination_date, notes
+                      'flock_id': _flockId,
+                      'vaccine_name': _vaccineName,
+                      'vaccination_date': _vaccinationDate
+                          .toIso8601String()
+                          .substring(0, 10),
+                      'notes': _notes,
+                    });
                   }
                 },
                 child: Text('Save'),
