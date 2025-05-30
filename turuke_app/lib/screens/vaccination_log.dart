@@ -167,7 +167,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
           throw Exception('Failed to save');
         }
       } catch (e) {
-        await _db!.insert('flock_pending', {'id': const Uuid().v4(), ...data});
+        await _db!.insert('vacination_pending', {'id': const Uuid().v4(), ...data});
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Saved offline, will sync later')),
         );

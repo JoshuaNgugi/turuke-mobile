@@ -1,5 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
+import 'package:turuke_app/utils/string_utils.dart';
+import 'package:uuid/uuid.dart';
 
 class DiseaseLogScreen extends StatefulWidget {
   static const String routeName = '/disease-log';
@@ -11,11 +20,37 @@ class DiseaseLogScreen extends StatefulWidget {
 
 class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
   List<Map<String, dynamic>> _diseases = [];
-  List<Map<String, dynamic>> _flocks = [
-    {'id': 1, 'breed': 'Isa Brown'},
-    {'id': 2, 'breed': 'White Leghorn'},
-    {'id': 3, 'breed': 'Rhode Island Red'},
-  ];
+  List<Map<String, dynamic>> _flocks = [];
+  Database? _db;
+
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+    _fetchDiseases();
+  }
+
+  Future<void> _fetchData() async {
+    setState(() => _isLoading = true);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final headers = await authProvider.getHeaders();
+    final farmId = authProvider.user!['farm_id'];
+
+    try {
+      // Fetch flocks
+      final flocksRes = await http.get(
+        Uri.parse('${Constants.API_BASE_URL}/flocks?farm_id=$farmId'),
+        headers: headers,
+      );
+      if (flocksRes.statusCode == 200) {
+        _flocks = List<Map<String, dynamic>>.from(jsonDecode(flocksRes.body));
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
 
   Future<void> _addDisease({
     required int flockId,
@@ -38,7 +73,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
     }
   }
 
-  void _showAddDiseaseDialog() {
+  Future<void> _showAddDiseaseDialog() async {
     final _formKey = GlobalKey<FormState>();
     int? _flockId;
     String _diseaseName = '';
@@ -46,7 +81,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
     int _affectedCount = 0;
     String _notes = '';
 
-    showDialog(
+    final result = await showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
@@ -57,7 +92,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    DropdownButton<int>(
+                    DropdownButtonFormField<int>(
                       hint: Text('Select Flock'),
                       value: _flockId,
                       items:
@@ -117,14 +152,13 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate() && _flockId != null) {
-                    _addDisease(
-                      flockId: _flockId!,
-                      diseaseName: _diseaseName,
-                      diagnosisDate: _diagnosisDate,
-                      affectedCount: _affectedCount,
-                      notes: _notes.isEmpty ? null : _notes,
-                    );
-                    Navigator.pop(context);
+                    Navigator.pop(context, {
+                      'flock_id': _flockId!,
+                      'disease_name': _diseaseName,
+                      'diagnosis_date': _diagnosisDate,
+                      'affected_count': _affectedCount,
+                      'notes': _notes.isEmpty ? null : _notes,
+                    });
                   }
                 },
                 child: Text('Save'),
@@ -132,6 +166,60 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
             ],
           ),
     );
+
+    if (result != null) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final data = {'farm_id': authProvider.user!['farm_id'], ...result};
+      try {
+        final response = await http.post(
+          Uri.parse('${Constants.API_BASE_URL}/diseases'),
+          headers: await authProvider.getHeaders(),
+          body: jsonEncode(data),
+        );
+        if (response.statusCode == 201) {
+          _fetchDiseases();
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Saved successfully')));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Save failed. Try again later')),
+          );
+          throw Exception('Failed to save');
+        }
+      } catch (e) {
+        await _db!.insert('disease_pending', {
+          'id': const Uuid().v4(),
+          ...data,
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Saved offline, will sync later')),
+        );
+        _fetchDiseases();
+      }
+    }
+  }
+
+  Future<void> _fetchDiseases() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    try {
+      final response = await http.get(
+        Uri.parse(
+          '${Constants.API_BASE_URL}/diseases?farm_id=${authProvider.user!['farm_id']}',
+        ),
+        headers: await authProvider.getHeaders(),
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          _diseases = List<Map<String, dynamic>>.from(
+            jsonDecode(response.body),
+          );
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _onRouteSelected(String route) {
@@ -151,11 +239,14 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
         itemCount: _diseases.length,
         itemBuilder: (context, index) {
           final disease = _diseases[index];
+          final diagnosisDate = StringUtils.formatDate(
+            disease['diagnosis_date'],
+          );
           return ListTile(
             leading: Icon(Icons.sick),
             title: Text(disease['disease_name']),
             subtitle: Text(
-              'Flock: ${disease['flock_id']} | Affected: ${disease['affected_count']}',
+              'Flock: ${disease['flock_id']} | Affected: ${disease['affected_count']} | OnSet : $diagnosisDate',
             ),
           );
         },
