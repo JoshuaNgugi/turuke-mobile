@@ -7,6 +7,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
+import 'package:turuke_app/utils/string_utils.dart';
 import 'package:uuid/uuid.dart';
 
 class VaccinationLogScreen extends StatefulWidget {
@@ -217,11 +218,14 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                 itemCount: _vaccinations.length,
                 itemBuilder: (context, index) {
                   final vaccination = _vaccinations[index];
+                  final vaccinationDate = StringUtils.formatDate(
+                    vaccination['vaccination_date'],
+                  );
                   return ListTile(
                     leading: Icon(Icons.vaccines),
                     title: Text(vaccination['vaccine_name']),
                     subtitle: Text(
-                      'Flock: ${vaccination['flock_id']} | Date: ${vaccination['vaccination_date']}',
+                      'Flock: ${vaccination['flock_id']} | Date: $vaccinationDate',
                     ),
                   );
                 },
