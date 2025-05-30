@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
@@ -28,8 +29,20 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
   @override
   void initState() {
     super.initState();
+    _initDb();
     _fetchData();
     _fetchDiseases();
+  }
+
+  Future<void> _initDb() async {
+    _db = await openDatabase(
+      path.join(await getDatabasesPath(), 'turuke.db'),
+      onCreate:
+          (db, version) => db.execute(
+            'CREATE TABLE disease_pending(id TEXT PRIMARY KEY, flock_id INTEGER, diagnosis_date TEXT, affected_count INTEGER, notes TEXT)',
+          ),
+      version: 1,
+    );
   }
 
   Future<void> _fetchData() async {
@@ -81,7 +94,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
     int _affectedCount = 0;
     String _notes = '';
 
-    final result = await showDialog(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder:
           (context) => AlertDialog(
@@ -155,7 +168,9 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                     Navigator.pop(context, {
                       'flock_id': _flockId!,
                       'disease_name': _diseaseName,
-                      'diagnosis_date': _diagnosisDate,
+                      'diagnosis_date': _diagnosisDate
+                          .toIso8601String()
+                          .substring(0, 10),
                       'affected_count': _affectedCount,
                       'notes': _notes.isEmpty ? null : _notes,
                     });
@@ -246,7 +261,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
             leading: Icon(Icons.sick),
             title: Text(disease['disease_name']),
             subtitle: Text(
-              'Flock: ${disease['flock_id']} | Affected: ${disease['affected_count']} | OnSet : $diagnosisDate',
+              'Flock: ${disease['flock_id']} | Affected: ${disease['affected_count']} | Onset : $diagnosisDate',
             ),
           );
         },
