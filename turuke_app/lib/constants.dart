@@ -9,8 +9,8 @@ class UserRole {
   static const int ASSISTANT = 4;
   static const int VIEWER = 5;
 
-  String get getString {
-    switch (this) {
+  static String getString(int role) {
+    switch (role) {
       case ADMIN:
         return 'Admin';
       case MANAGER:
@@ -22,7 +22,7 @@ class UserRole {
       case VIEWER:
         return 'Viewer';
       default:
-        return 'Admin';
+        return 'Viewer';
     }
   }
 }

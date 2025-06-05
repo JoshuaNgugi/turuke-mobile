@@ -9,6 +9,7 @@ import 'package:turuke_app/screens/login.dart';
 import 'package:turuke_app/screens/registration.dart';
 import 'package:turuke_app/screens/registration_done.dart';
 import 'package:turuke_app/screens/splash.dart';
+import 'package:turuke_app/screens/user_management_screen.dart';
 import 'package:turuke_app/screens/vaccination_log.dart';
 import 'package:turuke_app/screens/verify_email.dart';
 import 'package:provider/provider.dart';
@@ -56,6 +57,7 @@ class _TurukeAppState extends State<TurukeApp> {
           VaccinationLogScreen.routeName: (ctx) => VaccinationLogScreen(),
           DiseaseLogScreen.routeName: (ctx) => DiseaseLogScreen(),
           EggCollectionListScreen.routeName: (ctx) => EggCollectionListScreen(),
+          UserManagementScreen.routeName: (ctx) => UserManagementScreen(),
         },
       ),
     );
