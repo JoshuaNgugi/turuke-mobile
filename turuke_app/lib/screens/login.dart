@@ -22,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String _email = '', _password = '';
   bool _isLoading = false;
   String? _error;
+  bool _isObscured = true;
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -61,11 +62,25 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               SizedBox(height: 16),
               TextFormField(
-                decoration: InputDecoration(labelText: 'Password'),
-                obscureText: true,
+                obscureText: _isObscured,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isObscured ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isObscured = !_isObscured;
+                      });
+                    },
+                  ),
+                ),
                 validator:
                     (value) => value!.isEmpty ? 'Password required' : null,
                 onChanged: (value) => _password = value,
+                enableSuggestions: false,
+                autocorrect: false,
               ),
               SizedBox(height: 24),
               if (_error != null)

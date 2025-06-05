@@ -26,6 +26,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
   String _password = '';
   bool _isLoading = false;
   String? _error;
+  bool _isObscured = true;
 
   Future<void> _saveUser() async {
     if (!_formKey.currentState!.validate()) return;
@@ -143,14 +144,28 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   validator: (value) => value == null ? 'Required' : null,
                 ),
                 TextFormField(
-                  decoration: const InputDecoration(labelText: 'Password'),
-                  obscureText: true,
+                  obscureText: _isObscured,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isObscured ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isObscured = !_isObscured;
+                        });
+                      },
+                    ),
+                  ),
                   validator:
                       (value) =>
                           value!.isEmpty || value.length < 6
                               ? 'Minimum 6 characters'
                               : null,
                   onSaved: (value) => _password = value!,
+                  enableSuggestions: false,
+                  autocorrect: false,
                 ),
                 const SizedBox(height: 16),
                 if (_error != null)
