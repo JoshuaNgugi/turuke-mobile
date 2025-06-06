@@ -20,11 +20,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  double _eggYieldPercent = 0;
+  double _overallEggYieldPercent = 0;
   List<Map<String, dynamic>> _monthlyYield = [];
+  List<Map<String, dynamic>> _flockPercentages = [];
   Map<String, int> _chickenStatus = {'initial': 0, 'current': 0};
   String _selectedMonth = DateTime.now().toIso8601String().substring(0, 7);
   bool _isLoading = true;
+  int _flockCount = 0;
 
   @override
   void initState() {
@@ -43,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .substring(0, 10);
 
     try {
-      // Egg Yield
+      // Egg yield overall stat
       final eggYieldRes = await http.get(
         Uri.parse(
           '${Constants.API_BASE_URL}/stats/egg-yield?farm_id=$farmId&date=$yesterday',
@@ -51,9 +53,57 @@ class _HomeScreenState extends State<HomeScreen> {
         headers: headers,
       );
       if (eggYieldRes.statusCode == 200) {
-        _eggYieldPercent =
+        _overallEggYieldPercent =
             jsonDecode(eggYieldRes.body)['percent']?.toDouble() ?? 0;
       }
+
+      // Fetch egg collections for yesterday
+      final eggRes = await http.get(
+        Uri.parse(
+          '${Constants.API_BASE_URL}/egg-production?farm_id=$farmId&collection_date=$yesterday',
+        ),
+        headers: headers,
+      );
+      List<Map<String, dynamic>> eggs = [];
+      if (eggRes.statusCode == 200) {
+        eggs = List<Map<String, dynamic>>.from(jsonDecode(eggRes.body));
+      }
+
+      // Fetch flocks
+      final flocksRes = await http.get(
+        Uri.parse('${Constants.API_BASE_URL}/flocks?farm_id=$farmId'),
+        headers: headers,
+      );
+      List<Map<String, dynamic>> flocks = [];
+      if (flocksRes.statusCode == 200) {
+        flocks =
+            List<Map<String, dynamic>>.from(
+              jsonDecode(flocksRes.body),
+            ).where((f) => f['status'] == 1).toList();
+        _flockCount = flocks.length;
+      }
+
+      // Calculate percentages
+      double totalWholeEggs = 0.0;
+      double totalExpectedEggs = 0.0;
+      _flockPercentages =
+          flocks.map((flock) {
+            final eggData = eggs.firstWhere(
+              (e) => e['flock_id'] == flock['id'],
+              orElse: () => {'whole_eggs': 0},
+            );
+            final wholeEggs = (eggData['whole_eggs'] ?? 0).toDouble();
+            final expectedEggs = (flock['current_count'] ?? 0).toDouble();
+            final percentage =
+                expectedEggs > 0 ? (wholeEggs / expectedEggs) * 100 : 0.0;
+            totalWholeEggs += wholeEggs;
+            totalExpectedEggs += expectedEggs;
+            return {
+              'id': flock['id'],
+              'breed': flock['breed'],
+              'percentage': percentage,
+            };
+          }).toList();
 
       // Monthly Yield
       final monthlyYieldRes = await http.get(
@@ -97,8 +147,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final width = MediaQuery.of(context).size.width;
+    final cardWidth = width / _flockPercentages.length - 16;
     return Scaffold(
-      appBar: AppBar(title: Text('Turuke - Farm Stats')),
+      appBar: AppBar(title: Text('Farm Stats')),
       drawer: AppNavigationDrawer(
         selectedRoute: HomeScreen.routeName,
         onRouteSelected: _onRouteSelected,
@@ -111,21 +163,86 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Previous Day Egg Yield',
-                      style: TextStyle(fontSize: 18),
-                    ),
                     SizedBox(
-                      height: 100,
-                      child: Center(
-                        child: Text('${_eggYieldPercent.toStringAsFixed(1)}%'),
+                      width: double.infinity,
+                      child: Card(
+                        elevation: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment
+                                    .center, // centers horizontally
+                            children: [
+                              const Text(
+                                'Previous Day Egg Yield',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '${_overallEggYieldPercent.toStringAsFixed(1)}%',
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  color: Color.fromARGB(255, 103, 2, 121),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Monthly Egg Yield',
-                      style: TextStyle(fontSize: 18),
+                    if (_flockCount > 1)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children:
+                            _flockPercentages.map((flock) {
+                              return SizedBox(
+                                width: cardWidth,
+                                height: 70,
+                                child: Card(
+                                  elevation: 3,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          flock['breed'],
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${flock['percentage'].toStringAsFixed(1)}%',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            color: Color.fromARGB(
+                                              255,
+                                              103,
+                                              2,
+                                              121,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                      ),
+                    const SizedBox(height: 16),
+                    const Center(
+                      child: Text(
+                        'Monthly Egg Yield',
+                        style: TextStyle(fontSize: 18),
+                      ),
                     ),
+                    const SizedBox(height: 16),
                     SizedBox(
                       height: 200,
                       child: LineChart(
@@ -197,10 +314,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Chicken Status',
-                      style: TextStyle(fontSize: 18),
+                    const Center(
+                      child: Text(
+                        'Chicken Status',
+                        style: TextStyle(fontSize: 18),
+                      ),
                     ),
+                    const SizedBox(height: 16),
                     SizedBox(
                       height: 200,
                       child: PieChart(
