@@ -256,13 +256,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                           .split('-')[2]
                                           .split('T')[0],
                                     );
-                                    final totalEggs =
-                                        (entry['whole_eggs'] ?? 0) +
-                                        (entry['broken_eggs'] ?? 0);
-                                    return FlSpot(
-                                      day.toDouble(),
-                                      totalEggs.toDouble(),
+                                    final totalEggs = double.tryParse(
+                                      (entry['total_eggs'] ?? 0),
                                     );
+                                    return FlSpot(day.toDouble(), totalEggs!);
                                   }).toList(),
                               dotData: FlDotData(show: true),
                             ),
@@ -302,9 +299,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           maxY:
                               (_monthlyYield
                                           .map(
-                                            (e) =>
-                                                (e['whole_eggs'] ?? 0) +
-                                                (e['broken_eggs'] ?? 0),
+                                            (e) => int.parse(
+                                              e['total_eggs'] ?? '0',
+                                            ),
                                           )
                                           .fold(0, (a, b) => a > b ? a : b)
                                           .toDouble() *
