@@ -25,12 +25,35 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
   int _wholeEggs = 0, _brokenEggs = 0;
   List<Map<String, dynamic>> _flocks = [];
   Database? _db;
+  Map<String, dynamic>? _collection; // Store selected collection
+  bool _isEditing = false; // Track edit mode
+  String? _collectionId; // Store collection ID for
+  final _wholeEggsController = TextEditingController();
+  final _brokenEggsController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _initDb();
     _fetchFlocks();
+    // Retrieve arguments
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (args != null && args['collection'] != null) {
+        setState(() {
+          _collection = args['collection'];
+          _isEditing = true;
+          _collectionId = _collection!['id'].toString();
+          _flockId = _collection!['flock_id'];
+          _date = DateTime.parse(_collection!['collection_date']);
+          _wholeEggs = _collection!['whole_eggs'] ?? 0;
+          _wholeEggsController.text = _wholeEggs.toString();
+          _brokenEggs = _collection!['broken_eggs'] ?? 0;
+          _brokenEggsController.text = _brokenEggs.toString();
+        });
+      }
+    });
   }
 
   Future<void> _initDb() async {
@@ -73,16 +96,28 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
       };
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       try {
-        final response = await http.post(
-          Uri.parse('${Constants.API_BASE_URL}/egg-production'),
-          headers: await authProvider.getHeaders(),
-          body: jsonEncode(data),
-        );
-        if (response.statusCode == 201) {
+        final response =
+            _isEditing
+                ? await http.patch(
+                  Uri.parse(
+                    '${Constants.API_BASE_URL}/egg-production/$_collectionId',
+                  ),
+                  headers: await authProvider.getHeaders(),
+                  body: jsonEncode(data),
+                )
+                : await http.post(
+                  Uri.parse('${Constants.API_BASE_URL}/egg-production'),
+                  headers: await authProvider.getHeaders(),
+                  body: jsonEncode(data),
+                );
+
+        if (response.statusCode == (_isEditing ? 200 : 201)) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Successfully saved collection for ${_date.toIso8601String().substring(0, 10)}',
+                _isEditing
+                    ? 'Successfully updated collection for ${_date.toIso8601String().substring(0, 10)}'
+                    : 'Successfully saved collection for ${_date.toIso8601String().substring(0, 10)}',
               ),
             ),
           );
@@ -120,6 +155,7 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
           child: Column(
             children: [
               DropdownButtonFormField<int>(
+                value: _flockId,
                 decoration: const InputDecoration(labelText: 'Select Flock'),
                 items:
                     _flocks
@@ -153,6 +189,7 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
               ),
               const SizedBox(height: 10),
               TextFormField(
+                controller: _wholeEggsController,
                 decoration: InputDecoration(labelText: 'Whole Eggs'),
                 keyboardType: TextInputType.number,
                 validator: (value) => value!.isEmpty ? 'Required' : null,
@@ -162,6 +199,7 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
               ),
               const SizedBox(height: 10),
               TextFormField(
+                controller: _brokenEggsController,
                 decoration: InputDecoration(labelText: 'Broken Eggs'),
                 keyboardType: TextInputType.number,
                 validator: (value) => value!.isEmpty ? 'Required' : null,

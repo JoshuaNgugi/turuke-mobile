@@ -79,13 +79,20 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     }
   }
 
-  void _onRouteSelected(String route) {
-    Navigator.pushNamed(context, route);
+  void _onRouteSelected(String route, [Map<String, dynamic>? args]) {
+    Navigator.pushNamed(context, route, arguments: args); // Support arguments
   }
 
   @override
   Widget build(BuildContext context) {
-    final dataSource = EggCollectionDataSource(eggCollections: _eggCollections);
+    final dataSource = EggCollectionDataSource(
+      eggCollections: _eggCollections,
+      onSelect:
+          (entry) => _onRouteSelected(
+            EggCollectionScreen.routeName,
+            {'collection': entry}, // Pass selected collection
+          ),
+    );
     return Scaffold(
       appBar: AppBar(title: const Text('Egg Collections')),
       drawer: AppNavigationDrawer(
@@ -103,6 +110,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
                     minWidth: MediaQuery.of(context).size.width,
                   ),
                   child: PaginatedDataTable(
+                    showCheckboxColumn: false,
                     columns: [
                       const DataColumn(
                         label: Text(
