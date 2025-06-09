@@ -9,6 +9,7 @@ import 'package:turuke_app/screens/login.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:turuke_app/utils/string_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String routeName = '/home';
@@ -90,18 +91,24 @@ class _HomeScreenState extends State<HomeScreen> {
           flocks.map((flock) {
             final eggData = eggs.firstWhere(
               (e) => e['flock_id'] == flock['id'],
-              orElse: () => {'whole_eggs': 0},
+              orElse: () => {'total_eggs': 0},
             );
-            final wholeEggs = (eggData['whole_eggs'] ?? 0).toDouble();
+            final totalEggsCollected =
+                double.tryParse(eggData['total_eggs']) ?? 0;
             final expectedEggs = (flock['current_count'] ?? 0).toDouble();
             final percentage =
-                expectedEggs > 0 ? (wholeEggs / expectedEggs) * 100 : 0.0;
-            totalWholeEggs += wholeEggs;
+                expectedEggs > 0
+                    ? (totalEggsCollected / expectedEggs) * 100
+                    : 0.0;
+            totalWholeEggs += totalEggsCollected;
             totalExpectedEggs += expectedEggs;
+            String age = flock['current_age_weeks'].toString();
             return {
               'id': flock['id'],
               'breed': flock['breed'],
               'percentage': percentage,
+              'date': StringUtils.formatDate(eggData['collection_date']),
+              'age': age,
             };
           }).toList();
 
@@ -175,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     .center, // centers horizontally
                             children: [
                               const Text(
-                                'Previous Day Egg Yield',
+                                'Overall Previous Day Egg Yield',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -202,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             _flockPercentages.map((flock) {
                               return SizedBox(
                                 width: cardWidth,
-                                height: 70,
+                                height: 110,
                                 child: Card(
                                   elevation: 3,
                                   child: Padding(
@@ -213,13 +220,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                           flock['breed'],
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 16,
+                                            fontSize: 14,
                                           ),
                                         ),
                                         Text(
                                           '${flock['percentage'].toStringAsFixed(1)}%',
                                           style: const TextStyle(
-                                            fontSize: 16,
+                                            fontSize: 20,
                                             color: Color.fromARGB(
                                               255,
                                               103,
@@ -228,6 +235,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                           ),
                                         ),
+                                        Text(flock['date']),
+                                        Text('Weeks Old: ${flock['age']}'),
                                       ],
                                     ),
                                   ),
