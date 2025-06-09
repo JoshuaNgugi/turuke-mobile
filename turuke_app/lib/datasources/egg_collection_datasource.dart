@@ -14,6 +14,7 @@ class EggCollectionDataSource extends DataTableSource {
     final total = (entry['whole_eggs'] ?? 0) + (entry['broken_eggs'] ?? 0);
     return DataRow(
       cells: [
+        DataCell(Text('${entry['breed'] ?? 0}')), // TODO: change to name
         DataCell(Text(StringUtils.formatDate(entry['collection_date']))),
         DataCell(Text('${entry['whole_eggs'] ?? 0}')),
         DataCell(Text('${entry['broken_eggs'] ?? 0}')),
