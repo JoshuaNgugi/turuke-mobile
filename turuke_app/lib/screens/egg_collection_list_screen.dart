@@ -104,10 +104,36 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
                   ),
                   child: PaginatedDataTable(
                     columns: [
-                      const DataColumn(label: Text('Date')),
-                      const DataColumn(label: Text('Whole Eggs')),
-                      const DataColumn(label: Text('Broken Eggs')),
-                      const DataColumn(label: Text('Total')),
+                      const DataColumn(
+                        label: Text(
+                          'Flock',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const DataColumn(
+                        label: Text(
+                          'Date',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const DataColumn(
+                        label: Text(
+                          'Whole Eggs',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const DataColumn(
+                        label: Text(
+                          'Broken Eggs',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const DataColumn(
+                        label: Text(
+                          'Total',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ],
                     source: dataSource,
                     rowsPerPage: _rowsPerPage,
