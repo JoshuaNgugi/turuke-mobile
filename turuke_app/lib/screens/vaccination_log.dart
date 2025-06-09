@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
@@ -9,7 +10,6 @@ import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
 import 'package:turuke_app/utils/string_utils.dart';
 import 'package:uuid/uuid.dart';
-import 'package:path/path.dart' as path;
 
 class VaccinationLogScreen extends StatefulWidget {
   static const String routeName = '/vaccination-log';
@@ -229,6 +229,8 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
+              : _vaccinations.isEmpty
+              ? const Center(child: Text('No vaccination records found'))
               : ListView.builder(
                 padding: EdgeInsets.all(16.0),
                 itemCount: _vaccinations.length,

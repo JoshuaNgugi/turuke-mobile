@@ -249,23 +249,28 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
         selectedRoute: DiseaseLogScreen.routeName,
         onRouteSelected: _onRouteSelected,
       ),
-      body: ListView.builder(
-        padding: EdgeInsets.all(16.0),
-        itemCount: _diseases.length,
-        itemBuilder: (context, index) {
-          final disease = _diseases[index];
-          final diagnosisDate = StringUtils.formatDate(
-            disease['diagnosis_date'],
-          );
-          return ListTile(
-            leading: Icon(Icons.sick),
-            title: Text(disease['disease_name']),
-            subtitle: Text(
-              'Flock: ${disease['flock_id']} | Affected: ${disease['affected_count']} | Onset : $diagnosisDate',
-            ),
-          );
-        },
-      ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _diseases.isEmpty
+              ? const Center(child: Text('No disease records found'))
+              : ListView.builder(
+                padding: EdgeInsets.all(16.0),
+                itemCount: _diseases.length,
+                itemBuilder: (context, index) {
+                  final disease = _diseases[index];
+                  final diagnosisDate = StringUtils.formatDate(
+                    disease['diagnosis_date'],
+                  );
+                  return ListTile(
+                    leading: Icon(Icons.sick),
+                    title: Text(disease['disease_name']),
+                    subtitle: Text(
+                      'Flock: ${disease['flock_id']} | Affected: ${disease['affected_count']} | Onset : $diagnosisDate',
+                    ),
+                  );
+                },
+              ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddDiseaseDialog,
         child: Icon(Icons.add),
