@@ -84,7 +84,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    DropdownButton<int>(
+                    DropdownButtonFormField<int>(
                       hint: Text('Select Flock'),
                       value: _flockId,
                       items:
