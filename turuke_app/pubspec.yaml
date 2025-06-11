@@ -24,6 +24,7 @@ dev_dependencies:
   logger: ^2.5.0
   uuid: ^4.4.2
   flutter_launcher_icons: "^0.14.3"
+  intl: ^0.20.0
 
 flutter:
   uses-material-design: true

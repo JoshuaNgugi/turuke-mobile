@@ -9,6 +9,7 @@ import 'package:turuke_app/screens/login.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:turuke_app/utils/string_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String routeName = '/home';
@@ -20,11 +21,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  double _eggYieldPercent = 0;
+  double _overallEggYieldPercent = 0;
   List<Map<String, dynamic>> _monthlyYield = [];
+  List<Map<String, dynamic>> _flockPercentages = [];
   Map<String, int> _chickenStatus = {'initial': 0, 'current': 0};
   String _selectedMonth = DateTime.now().toIso8601String().substring(0, 7);
   bool _isLoading = true;
+  int _flockCount = 0;
 
   @override
   void initState() {
@@ -43,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .substring(0, 10);
 
     try {
-      // Egg Yield
+      // Egg yield overall stat
       final eggYieldRes = await http.get(
         Uri.parse(
           '${Constants.API_BASE_URL}/stats/egg-yield?farm_id=$farmId&date=$yesterday',
@@ -51,9 +54,63 @@ class _HomeScreenState extends State<HomeScreen> {
         headers: headers,
       );
       if (eggYieldRes.statusCode == 200) {
-        _eggYieldPercent =
+        _overallEggYieldPercent =
             jsonDecode(eggYieldRes.body)['percent']?.toDouble() ?? 0;
       }
+
+      // Fetch egg collections for yesterday
+      final eggRes = await http.get(
+        Uri.parse(
+          '${Constants.API_BASE_URL}/egg-production?farm_id=$farmId&collection_date=$yesterday',
+        ),
+        headers: headers,
+      );
+      List<Map<String, dynamic>> eggs = [];
+      if (eggRes.statusCode == 200) {
+        eggs = List<Map<String, dynamic>>.from(jsonDecode(eggRes.body));
+      }
+
+      // Fetch flocks
+      final flocksRes = await http.get(
+        Uri.parse('${Constants.API_BASE_URL}/flocks?farm_id=$farmId'),
+        headers: headers,
+      );
+      List<Map<String, dynamic>> flocks = [];
+      if (flocksRes.statusCode == 200) {
+        flocks =
+            List<Map<String, dynamic>>.from(
+              jsonDecode(flocksRes.body),
+            ).where((f) => f['status'] == 1).toList();
+        _flockCount = flocks.length;
+      }
+
+      // Calculate percentages
+      double totalWholeEggs = 0.0;
+      double totalExpectedEggs = 0.0;
+      _flockPercentages =
+          flocks.map((flock) {
+            final eggData = eggs.firstWhere(
+              (e) => e['flock_id'] == flock['id'],
+              orElse: () => {'total_eggs': 0},
+            );
+            final totalEggsCollected =
+                double.tryParse(eggData['total_eggs']) ?? 0;
+            final expectedEggs = (flock['current_count'] ?? 0).toDouble();
+            final percentage =
+                expectedEggs > 0
+                    ? (totalEggsCollected / expectedEggs) * 100
+                    : 0.0;
+            totalWholeEggs += totalEggsCollected;
+            totalExpectedEggs += expectedEggs;
+            String age = flock['current_age_weeks'].toString();
+            return {
+              'id': flock['id'],
+              'breed': flock['breed'],
+              'percentage': percentage,
+              'date': StringUtils.formatDate(eggData['collection_date']),
+              'age': age,
+            };
+          }).toList();
 
       // Monthly Yield
       final monthlyYieldRes = await http.get(
@@ -76,7 +133,11 @@ class _HomeScreenState extends State<HomeScreen> {
         headers: headers,
       );
       if (chickenStatusRes.statusCode == 200) {
-        _chickenStatus = jsonDecode(chickenStatusRes.body);
+        final decoded = jsonDecode(chickenStatusRes.body);
+        _chickenStatus = {
+          for (var entry in decoded.entries)
+            entry.key: int.tryParse(entry.value.toString()) ?? 0,
+        };
       }
     } catch (e) {
       // Handle offline or errors
@@ -91,8 +152,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final width = MediaQuery.of(context).size.width;
+    final cardWidth = width / _flockPercentages.length - 16;
     return Scaffold(
-      appBar: AppBar(title: Text('Turuke - Farm Stats')),
+      appBar: AppBar(title: Text('Farm Stats')),
       drawer: AppNavigationDrawer(
         selectedRoute: HomeScreen.routeName,
         onRouteSelected: _onRouteSelected,
@@ -105,21 +170,88 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Previous Day Egg Yield',
-                      style: TextStyle(fontSize: 18),
-                    ),
                     SizedBox(
-                      height: 100,
-                      child: Center(
-                        child: Text('${_eggYieldPercent.toStringAsFixed(1)}%'),
+                      width: double.infinity,
+                      child: Card(
+                        elevation: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment
+                                    .center, // centers horizontally
+                            children: [
+                              const Text(
+                                'Overall Previous Day Egg Yield',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '${_overallEggYieldPercent.toStringAsFixed(1)}%',
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  color: Color.fromARGB(255, 103, 2, 121),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Monthly Egg Yield',
-                      style: TextStyle(fontSize: 18),
+                    if (_flockCount > 1)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children:
+                            _flockPercentages.map((flock) {
+                              return SizedBox(
+                                width: cardWidth,
+                                height: 110,
+                                child: Card(
+                                  elevation: 3,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          flock['breed'],
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${flock['percentage'].toStringAsFixed(1)}%',
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            color: Color.fromARGB(
+                                              255,
+                                              103,
+                                              2,
+                                              121,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(flock['date']),
+                                        Text('Weeks Old: ${flock['age']}'),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                      ),
+                    const SizedBox(height: 16),
+                    const Center(
+                      child: Text(
+                        'Monthly Egg Yield',
+                        style: TextStyle(fontSize: 18),
+                      ),
                     ),
+                    const SizedBox(height: 16),
                     SizedBox(
                       height: 200,
                       child: LineChart(
@@ -127,38 +259,74 @@ class _HomeScreenState extends State<HomeScreen> {
                           lineBarsData: [
                             LineChartBarData(
                               spots:
-                                  _monthlyYield
-                                      .asMap()
-                                      .entries
-                                      .map(
-                                        (e) => FlSpot(
-                                          e.key.toDouble(),
-                                          double.tryParse(e.value['yield']) ??
-                                              0,
-                                        ),
-                                      )
-                                      .toList(),
-                              isCurved: true,
+                                  _monthlyYield.map((entry) {
+                                    final day = int.parse(
+                                      entry['collection_date']
+                                          .split('-')[2]
+                                          .split('T')[0],
+                                    );
+                                    final totalEggs = double.tryParse(
+                                      (entry['total_eggs'] ?? 0),
+                                    );
+                                    return FlSpot(day.toDouble(), totalEggs!);
+                                  }).toList(),
+                              dotData: FlDotData(show: true),
                             ),
                           ],
                           titlesData: FlTitlesData(
                             bottomTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                getTitlesWidget:
-                                    (value, meta) =>
-                                        Text('${value.toInt() + 1}'),
+                                getTitlesWidget: (value, met) {
+                                  final day = value.toInt();
+                                  day >= 1 && day <= daysInMonth ? '$day' : '';
+                                  return Text('${value.toInt() + 1}');
+                                },
+                                reservedSize: 22,
                               ),
                             ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget:
+                                    (value, meta) => Text('${value.toInt()}'),
+                                reservedSize: 28,
+                              ),
+                            ),
+                            topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
                           ),
+                          gridData: FlGridData(show: true),
+                          borderData: FlBorderData(show: true),
+                          minX: 1,
+                          maxX: daysInMonth.toDouble(),
+                          minY: 0,
+                          maxY:
+                              (_monthlyYield
+                                          .map(
+                                            (e) => int.parse(
+                                              e['total_eggs'] ?? '0',
+                                            ),
+                                          )
+                                          .fold(0, (a, b) => a > b ? a : b)
+                                          .toDouble() *
+                                      1.2)
+                                  .ceilToDouble(),
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Chicken Status',
-                      style: TextStyle(fontSize: 18),
+                    const Center(
+                      child: Text(
+                        'Chicken Status',
+                        style: TextStyle(fontSize: 18),
+                      ),
                     ),
+                    const SizedBox(height: 16),
                     SizedBox(
                       height: 200,
                       child: PieChart(

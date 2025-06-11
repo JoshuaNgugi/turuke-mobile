@@ -58,6 +58,14 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.purple,
               ),
             ),
+            Text(
+              "Jumpstart your farm's efficiency",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: const Color.fromARGB(255, 87, 1, 102),
+              ),
+            ),
           ],
         ),
       ),

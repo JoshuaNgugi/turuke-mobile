@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/disease_log.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
+import 'package:turuke_app/screens/egg_collection_list_screen.dart';
 import 'package:turuke_app/screens/flock_management.dart';
 import 'package:turuke_app/screens/home.dart';
 import 'package:turuke_app/screens/login.dart';
+import 'package:turuke_app/screens/user_management_screen.dart';
 import 'package:turuke_app/screens/vaccination_log.dart';
 
 class AppNavigationDrawer extends StatelessWidget {
@@ -18,6 +22,8 @@ class AppNavigationDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final userRole = authProvider.user?['role'] ?? 5; // Default to Viewer
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -63,8 +69,8 @@ class AppNavigationDrawer extends StatelessWidget {
                       : null,
             ),
             title: Text('Egg Collection'),
-            selected: selectedRoute == EggCollectionScreen.routeName,
-            onTap: () => onRouteSelected(EggCollectionScreen.routeName),
+            selected: selectedRoute == EggCollectionListScreen.routeName,
+            onTap: () => onRouteSelected(EggCollectionListScreen.routeName),
           ),
           ListTile(
             leading: Icon(
@@ -102,6 +108,13 @@ class AppNavigationDrawer extends StatelessWidget {
             selected: selectedRoute == DiseaseLogScreen.routeName,
             onTap: () => onRouteSelected(DiseaseLogScreen.routeName),
           ),
+          if (userRole == 1 || userRole == 2) // Admin or Manager
+            ListTile(
+              leading: const Icon(Icons.people),
+              title: const Text('User Management'),
+              selected: selectedRoute == UserManagementScreen.routeName,
+              onTap: () => onRouteSelected(UserManagementScreen.routeName),
+            ),
           Divider(),
           ListTile(
             leading: Icon(Icons.logout, color: Colors.red),

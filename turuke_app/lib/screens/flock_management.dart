@@ -23,12 +23,23 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
   List<Map<String, dynamic>> _flocks = [];
   Database? _db;
   bool _isLoading = true;
+  final _flockNameController = TextEditingController();
+  final _initialCountController = TextEditingController();
+  final _currentCountController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _initDb();
     _fetchFlocks();
+  }
+
+  @override
+  void dispose() {
+    _flockNameController.dispose();
+    _initialCountController.dispose();
+    _currentCountController.dispose();
+    super.dispose();
   }
 
   Future<void> _initDb() async {
@@ -66,12 +77,24 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
     Navigator.pushNamed(context, route);
   }
 
-  Future<void> _showAddFlockDialog() async {
+  Future<void> _showAddFlockDialog(Map<String, dynamic>? flock) async {
     final formKey = GlobalKey<FormState>();
     String breed = '';
-    DateTime arrivalDate = DateTime.now();
-    int initialCount = 0, ageWeeks = 0;
+    int initialCount = 0, currentCount = 0;
     int status = 1;
+
+    if (flock != null) {
+      _flockNameController.text = flock['breed'];
+      _initialCountController.text = flock['initial_count'].toString();
+      _currentCountController.text = flock['current_count'].toString();
+    } else {
+      _flockNameController.clear();
+      _initialCountController.clear();
+      _currentCountController.clear();
+    }
+
+    DateTime arrivalDate =
+        flock != null ? DateTime.parse(flock['arrival_date']) : DateTime.now();
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -85,7 +108,8 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextFormField(
-                      decoration: const InputDecoration(labelText: 'Breed'),
+                      controller: _flockNameController,
+                      decoration: const InputDecoration(labelText: 'Name'),
                       validator: (value) => value!.isEmpty ? 'Required' : null,
                       onChanged: (value) => breed = value,
                     ),
@@ -111,6 +135,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                       },
                     ),
                     TextFormField(
+                      controller: _initialCountController,
                       decoration: const InputDecoration(
                         labelText: 'Initial Count',
                       ),
@@ -120,12 +145,14 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                           (value) => initialCount = int.tryParse(value) ?? 0,
                     ),
                     TextFormField(
+                      controller: _currentCountController,
                       decoration: const InputDecoration(
-                        labelText: 'Age (Weeks)',
+                        labelText: 'Current Count',
                       ),
                       keyboardType: TextInputType.number,
                       validator: (value) => value!.isEmpty ? 'Required' : null,
-                      onChanged: (value) => ageWeeks = int.tryParse(value) ?? 0,
+                      onChanged:
+                          (value) => currentCount = int.tryParse(value) ?? 0,
                     ),
                   ],
                 ),
@@ -146,7 +173,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                         10,
                       ),
                       'initial_count': initialCount,
-                      'age_weeks': ageWeeks,
+                      'current_count': currentCount,
                       'status': status,
                     });
                   }
@@ -201,19 +228,14 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                     leading: Icon(Icons.pets),
                     title: Text(flock['breed']),
                     subtitle: Text(
-                      'Count: ${flock['current_count']}, Age: ${flock['age_weeks']} weeks',
+                      'Count: ${flock['current_count']}, Age: ${flock['current_age_weeks']} weeks',
                     ),
-                    onTap: () {
-                      // TODO: Navigate to flock details or edit
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Edit coming soon')),
-                      );
-                    },
+                    onTap: () => _showAddFlockDialog(flock),
                   );
                 },
               ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddFlockDialog,
+        onPressed: () => _showAddFlockDialog(null),
         child: Icon(Icons.add),
       ),
     );

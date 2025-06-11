@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/home.dart';
-import 'package:turuke_app/screens/verify_email.dart';
 import 'package:provider/provider.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -44,7 +43,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         farmName: _farmName,
         password: _password,
       );
-      Navigator.pushNamed(context, VerifyEmailScreen.routeName);
+      Navigator.pushNamed(context, HomeScreen.routeName);
     } catch (e) {
       setState(() {
         _error = e.toString();
