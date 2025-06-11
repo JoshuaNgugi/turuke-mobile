@@ -243,7 +243,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                     leading: Icon(Icons.vaccines),
                     title: Text(vaccination['vaccine_name']),
                     subtitle: Text(
-                      'Flock: ${vaccination['flock_id']} | Date: $vaccinationDate',
+                      'Flock: ${vaccination['flock_name']} | Date: $vaccinationDate',
                     ),
                   );
                 },

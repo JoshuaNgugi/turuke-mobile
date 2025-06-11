@@ -266,7 +266,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                     leading: Icon(Icons.sick),
                     title: Text(disease['disease_name']),
                     subtitle: Text(
-                      'Flock: ${disease['flock_id']} | Affected: ${disease['affected_count']} | Onset : $diagnosisDate',
+                      'Flock: ${disease['flock_name']} | Affected: ${disease['affected_count']} | Onset : $diagnosisDate',
                     ),
                   );
                 },
