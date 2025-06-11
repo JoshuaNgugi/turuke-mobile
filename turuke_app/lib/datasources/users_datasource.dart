@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:turuke_app/constants.dart';
-import 'package:turuke_app/utils/string_utils.dart';
+import 'package:turuke_app/models/user.dart';
 
 class UsersDataSource extends DataTableSource {
-  final List<Map<String, dynamic>> _users;
+  final List<User> _users;
+  final Function(User) onSelect;
 
-  UsersDataSource({required List<Map<String, dynamic>> users})
+  UsersDataSource({required List<User> users, required this.onSelect})
     : _users = users;
 
   @override
@@ -13,11 +14,16 @@ class UsersDataSource extends DataTableSource {
     if (index >= _users.length) return null;
     final user = _users[index];
     return DataRow(
+      onSelectChanged: (selected) {
+        if (selected == true && onSelect != null) {
+          onSelect(user); // Trigger onSelect when row is tapped
+        }
+      },
       cells: [
-        DataCell(Text(user['first_name'] ?? '')),
-        DataCell(Text(user['last_name'] ?? '')),
-        DataCell(Text(user['email'] ?? '')),
-        DataCell(Text(UserRole.getString(user['role'] ?? 5))),
+        DataCell(Text(user.firstName)),
+        DataCell(Text(user.lastName)),
+        DataCell(Text(user.email)),
+        DataCell(Text(UserRole.getString(user.role))),
       ],
     );
   }

@@ -7,7 +7,9 @@ import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/datasources/users_datasource.dart';
+import 'package:turuke_app/models/user.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
+import 'package:turuke_app/screens/add_user_screen.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
 
 class UserManagementScreen extends StatefulWidget {
@@ -20,7 +22,7 @@ class UserManagementScreen extends StatefulWidget {
 }
 
 class _UserManagementScreenState extends State<UserManagementScreen> {
-  List<Map<String, dynamic>> _users = [];
+  List<User> _users = [];
   bool _isLoading = true;
   final int _rowsPerPage = 10;
 
@@ -42,27 +44,30 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         headers: headers,
       );
       if (response.statusCode == 200) {
-        _users = List<Map<String, dynamic>>.from(jsonDecode(response.body));
+        List<dynamic> usersData = jsonDecode(response.body);
+        _users = usersData.map((user) => User.fromJson(user)).toList();
       } else {
         // Offline: Fetch from sqflite
         final db = await openDatabase(
           path.join(await getDatabasesPath(), 'turuke.db'),
         );
-        _users = await db.query('users');
+        List<Map<String, Object?>> dbUsers = await db.query('users');
+        _users = dbUsers.map((user) => User.fromJson(user)).toList();
       }
     } catch (e) {
       // Offline fallback
       final db = await openDatabase(
         path.join(await getDatabasesPath(), 'turuke.db'),
       );
-      _users = await db.query('users');
+      List<Map<String, Object?>> dbUsers = await db.query('users');
+      _users = dbUsers.map((user) => User.fromJson(user)).toList();
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
-  void _onRouteSelected(String route) {
-    Navigator.pushNamed(context, route);
+  void _onRouteSelected(String route, [Map<String, dynamic>? args]) {
+    Navigator.pushNamed(context, route, arguments: args);
   }
 
   @override
@@ -77,7 +82,14 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       );
     }
 
-    final dataSource = UsersDataSource(users: _users);
+    final dataSource = UsersDataSource(
+      users: _users,
+      onSelect:
+          (entry) => _onRouteSelected(
+            AddUserScreen.routeName,
+            {'collection': entry}, // Pass selected collection
+          ),
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('User Management')),
@@ -93,6 +105,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               : SingleChildScrollView(
                 child: PaginatedDataTable(
                   header: const Text('Farm Users'),
+                  showCheckboxColumn: false,
                   columns: [
                     DataColumn(label: const Text('First Name')),
                     DataColumn(label: const Text('Last Name')),
