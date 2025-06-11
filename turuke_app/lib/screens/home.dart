@@ -1,14 +1,14 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/screens/egg_collection.dart';
 import 'package:turuke_app/screens/login.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
-import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
+import 'package:turuke_app/utils/http_client.dart' show HttpClient;
 import 'package:turuke_app/utils/string_utils.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -32,7 +32,30 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchStats();
+    _validateSessionAndFetchStats();
+  }
+
+  Future<void> _validateSessionAndFetchStats() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    final tokenExpiresAt = authProvider.tokenExpiresAt;
+    final token = authProvider.token;
+
+    DateTime? expiresAt = DateTime.tryParse(tokenExpiresAt ?? '');
+
+    if (expiresAt == null ||
+        token == null ||
+        DateTime.now().isAfter(expiresAt)) {
+      await authProvider.logout();
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        LoginScreen.routeName,
+        (route) => false,
+      );
+      return;
+    }
+
+    await _fetchStats();
   }
 
   Future<void> _fetchStats() async {
@@ -47,7 +70,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       // Egg yield overall stat
-      final eggYieldRes = await http.get(
+      final eggYieldRes = await HttpClient.get(
+        context,
         Uri.parse(
           '${Constants.API_BASE_URL}/stats/egg-yield?farm_id=$farmId&date=$yesterday',
         ),
@@ -56,6 +80,14 @@ class _HomeScreenState extends State<HomeScreen> {
       if (eggYieldRes.statusCode == 200) {
         _overallEggYieldPercent =
             jsonDecode(eggYieldRes.body)['percent']?.toDouble() ?? 0;
+      }
+
+      if (eggYieldRes.statusCode == 401) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          LoginScreen.routeName,
+          (route) => false,
+        );
       }
 
       // Fetch egg collections for yesterday

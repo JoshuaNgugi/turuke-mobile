@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,9 +8,11 @@ import 'package:turuke_app/constants.dart';
 
 class AuthProvider with ChangeNotifier {
   String? _token;
+  String? _tokenExpiresAt;
   Map<String, dynamic>? _user;
 
   String? get token => _token;
+  String? get tokenExpiresAt => _tokenExpiresAt;
   Map<String, dynamic>? get user => _user;
 
   Future<void> register({
@@ -60,9 +63,13 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', _token!);
       await prefs.setString('user', jsonEncode(_user));
+      await prefs.setString(
+        'expires_at',
+        DateTime.now().add(const Duration(days: 365)).toIso8601String(),
+      );
       notifyListeners();
     } else {
-      throw Exception('Login failed: ${response.body}');
+      throw Exception('Login failed: ${jsonDecode(response.body)['error']}');
     }
   }
 
@@ -80,15 +87,18 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     _token = null;
     _user = null;
+    _tokenExpiresAt = DateTime.now().toIso8601String();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     await prefs.remove('user');
+    await prefs.remove('expires_at');
     notifyListeners();
   }
 
   Future<void> loadFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('token');
+    _tokenExpiresAt = prefs.getString('expires_at');
     final userJson = prefs.getString('user');
     if (userJson != null) {
       _user = jsonDecode(userJson);

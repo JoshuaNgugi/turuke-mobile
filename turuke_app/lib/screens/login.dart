@@ -21,23 +21,21 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   String _email = '', _password = '';
   bool _isLoading = false;
-  String? _error;
   bool _isObscured = true;
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() {
       _isLoading = true;
-      _error = null;
     });
     try {
       await context.read<AuthProvider>().login(_email, _password);
       Navigator.pushReplacementNamed(context, HomeScreen.routeName);
     } catch (e) {
       logger.e(e);
-      setState(() {
-        _error = e.toString();
-      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -82,15 +80,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 enableSuggestions: false,
                 autocorrect: false,
               ),
-              SizedBox(height: 24),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
               const SizedBox(height: 16),
               _isLoading
                   ? const CircularProgressIndicator()
