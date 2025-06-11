@@ -56,6 +56,13 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _wholeEggsController.dispose();
+    _brokenEggsController.dispose();
+    super.dispose();
+  }
+
   Future<void> _initDb() async {
     _db = await openDatabase(
       path.join(await getDatabasesPath(), 'turuke.db'),
