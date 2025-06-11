@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
 import 'package:uuid/uuid.dart';
@@ -20,7 +21,7 @@ class FlockManagementScreen extends StatefulWidget {
 }
 
 class _FlockManagementScreenState extends State<FlockManagementScreen> {
-  List<Map<String, dynamic>> _flocks = [];
+  List<Flock> _flocks = [];
   Database? _db;
   bool _isLoading = true;
   final _flockNameController = TextEditingController();
@@ -64,7 +65,8 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
       );
       if (response.statusCode == 200) {
         setState(() {
-          _flocks = List<Map<String, dynamic>>.from(jsonDecode(response.body));
+          final List<dynamic> jsonList = jsonDecode(response.body);
+          _flocks = jsonList.map((json) => Flock.fromJson(json)).toList();
           _isLoading = false;
         });
       }
@@ -77,16 +79,16 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
     Navigator.pushNamed(context, route);
   }
 
-  Future<void> _showAddFlockDialog(Map<String, dynamic>? flock) async {
+  Future<void> _showAddFlockDialog(Flock? flock) async {
     final formKey = GlobalKey<FormState>();
     String breed = '';
     int initialCount = 0, currentCount = 0;
     int status = 1;
 
     if (flock != null) {
-      _flockNameController.text = flock['breed'];
-      _initialCountController.text = flock['initial_count'].toString();
-      _currentCountController.text = flock['current_count'].toString();
+      _flockNameController.text = flock.name;
+      _initialCountController.text = flock.initialCount.toString();
+      _currentCountController.text = flock.currentCount.toString();
     } else {
       _flockNameController.clear();
       _initialCountController.clear();
@@ -94,7 +96,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
     }
 
     DateTime arrivalDate =
-        flock != null ? DateTime.parse(flock['arrival_date']) : DateTime.now();
+        flock != null ? DateTime.parse(flock.arrivalDate) : DateTime.now();
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -223,12 +225,12 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                 padding: EdgeInsets.all(16.0),
                 itemCount: _flocks.length,
                 itemBuilder: (context, index) {
-                  final flock = _flocks[index];
+                  Flock flock = _flocks[index];
                   return ListTile(
                     leading: Icon(Icons.pets),
-                    title: Text(flock['breed']),
+                    title: Text(flock.name),
                     subtitle: Text(
-                      'Count: ${flock['current_count']}, Age: ${flock['current_age_weeks']} weeks',
+                      'Count: ${flock.currentCount}, Age: ${flock.ageWeeks} weeks',
                     ),
                     onTap: () => _showAddFlockDialog(flock),
                   );
