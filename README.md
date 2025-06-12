@@ -21,3 +21,5 @@ Turuke is a poultry management app crafted for farmers who want to keep their co
 
 **Splash Screen:** A quick “Turuke” welcome that checks your login status and whisks you to the right screen. 
 
+TODO: add screenshots
+
