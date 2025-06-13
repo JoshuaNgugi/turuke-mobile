@@ -5,33 +5,22 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/models/user.dart';
 
 class AuthProvider with ChangeNotifier {
   String? _token;
   String? _tokenExpiresAt;
-  Map<String, dynamic>? _user;
+  User? _user;
 
   String? get token => _token;
   String? get tokenExpiresAt => _tokenExpiresAt;
-  Map<String, dynamic>? get user => _user;
+  User? get user => _user;
 
-  Future<void> register({
-    required String firstName,
-    required String lastName,
-    required String email,
-    required String farmName,
-    required String password,
-  }) async {
+  Future<void> register({required User user}) async {
     final response = await http.post(
       Uri.parse('${Constants.API_BASE_URL}/auth/register'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'first_name': firstName,
-        'last_name': lastName,
-        'email': email,
-        'farm_name': farmName,
-        'password': password,
-      }),
+      body: user.toJson(),
     );
     if (response.statusCode == 201) {
       notifyListeners();
@@ -59,14 +48,13 @@ class AuthProvider with ChangeNotifier {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       _token = data['token'];
-      _user = data['user'];
+      _user = User.fromJson(data['user']);
+      _tokenExpiresAt =
+          DateTime.now().add(const Duration(days: 365)).toIso8601String();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', _token!);
-      await prefs.setString('user', jsonEncode(_user));
-      await prefs.setString(
-        'expires_at',
-        DateTime.now().add(const Duration(days: 365)).toIso8601String(),
-      );
+      await prefs.setString('user', jsonEncode(_user!.toJson()));
+      await prefs.setString('expires_at', _tokenExpiresAt!);
       notifyListeners();
     } else {
       throw Exception('Login failed: ${jsonDecode(response.body)['error']}');
@@ -101,7 +89,9 @@ class AuthProvider with ChangeNotifier {
     _tokenExpiresAt = prefs.getString('expires_at');
     final userJson = prefs.getString('user');
     if (userJson != null) {
-      _user = jsonDecode(userJson);
+      // Decode the JSON string into a Map<String, dynamic>
+      final Map<String, dynamic> decodedJson = jsonDecode(userJson);
+      _user = User.fromJson(decodedJson);
     }
     notifyListeners();
   }

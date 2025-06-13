@@ -79,7 +79,7 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-          '${Constants.API_BASE_URL}/flocks?farm_id=${authProvider.user!['farm_id']}',
+          '${Constants.API_BASE_URL}/flocks?farm_id=${authProvider.user!.farmId}',
         ),
         headers: await authProvider.getHeaders(),
       );

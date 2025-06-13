@@ -49,7 +49,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
     setState(() => _isLoading = true);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
-    final farmId = authProvider.user!['farm_id'];
+    final farmId = authProvider.user!.farmId;
 
     try {
       // Fetch flocks
@@ -184,7 +184,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
 
     if (result != null) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final data = {'farm_id': authProvider.user!['farm_id'], ...result};
+      final data = {'farm_id': authProvider.user!.farmId, ...result};
       try {
         final response = await http.post(
           Uri.parse('${Constants.API_BASE_URL}/diseases'),
@@ -220,7 +220,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-          '${Constants.API_BASE_URL}/diseases?farm_id=${authProvider.user!['farm_id']}',
+          '${Constants.API_BASE_URL}/diseases?farm_id=${authProvider.user!.farmId}',
         ),
         headers: await authProvider.getHeaders(),
       );

@@ -50,7 +50,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
     setState(() => _isLoading = true);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
-    final farmId = authProvider.user!['farm_id'];
+    final farmId = authProvider.user!.farmId;
 
     try {
       // Fetch flocks
@@ -161,7 +161,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
 
     if (result != null) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final data = {'farm_id': authProvider.user!['farm_id'], ...result};
+      final data = {'farm_id': authProvider.user!.farmId, ...result};
       try {
         final response = await http.post(
           Uri.parse('${Constants.API_BASE_URL}/vaccinations'),
@@ -197,7 +197,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-          '${Constants.API_BASE_URL}/vaccinations?farm_id=${authProvider.user!['farm_id']}',
+          '${Constants.API_BASE_URL}/vaccinations?farm_id=${authProvider.user!.farmId}',
         ),
         headers: await authProvider.getHeaders(),
       );

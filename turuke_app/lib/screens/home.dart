@@ -46,9 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     DateTime? expiresAt = DateTime.tryParse(tokenExpiresAt ?? '');
 
-    if (expiresAt == null ||
-        token == null ||
-        DateTime.now().isAfter(expiresAt)) {
+    if (expiresAt == null || token == null || DateTime.now().isAfter(expiresAt)) {
       await authProvider.logout();
       Navigator.pushNamedAndRemoveUntil(
         context,
@@ -65,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
-    final farmId = authProvider.user!['farm_id'];
+    final farmId = authProvider.user!.farmId;
     final yesterday = DateTime.now()
         .subtract(const Duration(days: 1))
         .toIso8601String()

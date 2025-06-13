@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/models/user.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 
 class AddUserScreen extends StatefulWidget {
@@ -27,6 +28,43 @@ class _AddUserScreenState extends State<AddUserScreen> {
   bool _isLoading = false;
   String? _error;
   bool _isObscured = true;
+  User? _user;
+  bool _isEditing = false;
+  int? currentUserRole;
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context);
+      currentUserRole = authProvider.user?.role ?? 5;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (args != null && args['user'] != null) {
+        setState(() {
+          _user = args['user'];
+          _isEditing = true;
+          _firstNameController.text = _user!.firstName ?? '';
+          _lastNameController.text = _user!.lastName ?? '';
+          _emailController.text = _user!.email;
+          _role = _user!.role;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   Future<void> _saveUser() async {
     if (!_formKey.currentState!.validate()) return;
@@ -38,7 +76,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
-    final farmId = authProvider.user!['farm_id'];
+    final farmId = authProvider.user!.farmId;
 
     try {
       final response = await http.post(
@@ -89,10 +127,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final userRole = authProvider.user?['role'] ?? 5;
-
-    if (userRole != 1 && userRole != 2) {
+    if (currentUserRole != 1 && currentUserRole != 2) {
       return Scaffold(
         appBar: AppBar(title: const Text('Add User')),
         body: const Center(
@@ -111,16 +146,19 @@ class _AddUserScreenState extends State<AddUserScreen> {
             child: Column(
               children: [
                 TextFormField(
+                  controller: _firstNameController,
                   decoration: const InputDecoration(labelText: 'First Name'),
                   validator: (value) => value!.isEmpty ? 'Required' : null,
                   onSaved: (value) => _firstName = value!,
                 ),
                 TextFormField(
+                  controller: _lastNameController,
                   decoration: const InputDecoration(labelText: 'Last Name'),
                   validator: (value) => value!.isEmpty ? 'Required' : null,
                   onSaved: (value) => _lastName = value!,
                 ),
                 TextFormField(
+                  controller: _emailController,
                   decoration: const InputDecoration(labelText: 'Email'),
                   keyboardType: TextInputType.emailAddress,
                   validator:

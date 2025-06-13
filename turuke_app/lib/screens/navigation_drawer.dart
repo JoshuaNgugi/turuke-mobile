@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/disease_log.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
@@ -23,7 +24,8 @@ class AppNavigationDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final userRole = authProvider.user?['role'] ?? 5; // Default to Viewer
+    final userRole =
+        authProvider.user?.role ?? UserRole.VIEWER; // Default to Viewer
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,

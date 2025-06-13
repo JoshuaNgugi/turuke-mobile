@@ -20,8 +20,8 @@ class UsersDataSource extends DataTableSource {
         }
       },
       cells: [
-        DataCell(Text(user.firstName)),
-        DataCell(Text(user.lastName)),
+        DataCell(Text(user.firstName ?? '')),
+        DataCell(Text(user.lastName ?? '')),
         DataCell(Text(user.email)),
         DataCell(Text(UserRole.getString(user.role))),
       ],

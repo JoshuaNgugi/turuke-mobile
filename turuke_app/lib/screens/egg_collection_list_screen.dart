@@ -36,7 +36,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     setState(() => _isLoading = true);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
-    final farmId = authProvider.user!['farm_id'];
+    final farmId = authProvider.user!.farmId;
 
     try {
       // Fetch flocks

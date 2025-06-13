@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/models/user.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/home.dart';
 import 'package:provider/provider.dart';
@@ -22,8 +24,32 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   bool _termsAccepted = false;
   bool _isLoading = false;
   String? _error;
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _farmNameController = TextEditingController();
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _farmNameController.dispose();
+    super.dispose();
+  }
 
   Future<void> _register() async {
+    User _user = User(
+      firstName: _firstNameController.text,
+      lastName: _lastNameController.text,
+      farmName: _farmNameController.text,
+      email: _emailController.text,
+      password: _passwordController.text,
+      role:
+          UserRole.VIEWER, // TODO: fix this. Registering user cannot be viewer
+    );
     if (!_termsAccepted) {
       ScaffoldMessenger.of(
         context,
@@ -36,13 +62,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       _error = null;
     });
     try {
-      await context.read<AuthProvider>().register(
-        firstName: _firstName,
-        lastName: _lastName,
-        email: _email,
-        farmName: _farmName,
-        password: _password,
-      );
+      await context.read<AuthProvider>().register(user: _user);
       Navigator.pushNamed(context, HomeScreen.routeName);
     } catch (e) {
       setState(() {
@@ -67,12 +87,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextFormField(
+                    controller: _firstNameController,
                     decoration: InputDecoration(labelText: 'First Name'),
                     validator: (value) => value!.isEmpty ? 'Required' : null,
                     onChanged: (value) => _firstName = value,
                   ),
                   SizedBox(width: 16),
                   TextFormField(
+                    controller: _lastNameController,
                     decoration: InputDecoration(labelText: 'Last Name'),
                     validator: (value) => value!.isEmpty ? 'Required' : null,
                     onChanged: (value) => _lastName = value,
@@ -84,6 +106,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextFormField(
+                    controller: _emailController,
                     decoration: InputDecoration(labelText: 'Email'),
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) => value!.isEmpty ? 'Required' : null,
@@ -91,6 +114,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                   SizedBox(width: 16),
                   TextFormField(
+                    controller: _farmNameController,
                     decoration: InputDecoration(labelText: 'Farm Name'),
                     validator: (value) => value!.isEmpty ? 'Required' : null,
                     onChanged: (value) => _farmName = value,
@@ -102,6 +126,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextFormField(
+                    controller: _passwordController,
                     decoration: InputDecoration(labelText: 'Password'),
                     obscureText: true,
                     validator: (value) => value!.isEmpty ? 'Required' : null,

@@ -36,7 +36,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     setState(() => _isLoading = true);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
-    final farmId = authProvider.user!['farm_id'];
+    final farmId = authProvider.user!.farmId;
 
     try {
       final response = await http.get(
@@ -73,9 +73,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final userRole = authProvider.user?['role'] ?? 5;
+    final userRole = authProvider.user?.role ?? UserRole.VIEWER;
 
-    if (userRole != 1 && userRole != 2) {
+    if (userRole != UserRole.ADMIN && userRole != UserRole.MANAGER) {
       return Scaffold(
         appBar: AppBar(title: const Text('User Management')),
         body: const Center(child: Text('Access Denied')),
@@ -85,10 +85,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final dataSource = UsersDataSource(
       users: _users,
       onSelect:
-          (entry) => _onRouteSelected(
-            AddUserScreen.routeName,
-            {'collection': entry}, // Pass selected collection
-          ),
+          (user) => _onRouteSelected(AddUserScreen.routeName, {'user': user}),
     );
 
     return Scaffold(

@@ -17,24 +17,43 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeApp();
+    });
   }
 
   Future<void> _initializeApp() async {
-    // Load auth state
-    await Provider.of<AuthProvider>(context, listen: false).loadFromPrefs();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    bool loadSuccessful = false; // Flag to track success
 
-    // Wait for 2 seconds to show splash
-    Timer(const Duration(seconds: 2), () {
-      // Navigate based on auth state
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      Navigator.pushReplacementNamed(
-        context,
-        authProvider.token != null
-            ? HomeScreen.routeName
-            : LoginScreen.routeName,
+    try {
+      await authProvider.loadFromPrefs();
+      loadSuccessful = true; // Set to true if loading succeeded
+    } catch (e) {
+      // Log the error for debugging
+      print('Error loading authentication state from preferences: $e');
+      // Optionally, set the token to null explicitly if your loadFromPrefs
+      // might leave it in an indeterminate state on error.
+      // authProvider.clearToken(); // If you have such a method
+      // You might also want to show a toast/snackbar to the user
+      // or set a flag to display a simple error on the splash screen itself.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Redirecting you to log in screen')),
       );
-    });
+      await authProvider.logout();
+    } finally {
+      // Always wait for 2 seconds to show splash, regardless of load success
+      Timer(const Duration(seconds: 2), () {
+        // Ensure the widget is still mounted before attempting navigation
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(
+          context,
+          authProvider.token != null
+              ? HomeScreen.routeName
+              : LoginScreen.routeName,
+        );
+      });
+    }
   }
 
   @override

@@ -1,18 +1,24 @@
 class User {
   final int? id; // nullable if not yet persisted (used in offline mode)
-  final String firstName;
-  final String lastName;
+  final String? firstName;
+  final String? lastName;
   final String email;
   final int role;
-  final int status;
+  final int? status;
+  final int? farmId;
+  final String? farmName;
+  final String? password;
 
   User({
     this.id,
-    required this.firstName,
-    required this.lastName,
+    this.firstName,
+    this.lastName,
     required this.email,
     required this.role,
-    required this.status,
+    this.status,
+    this.farmId,
+    this.farmName,
+    this.password,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -23,6 +29,7 @@ class User {
       email: json['email'],
       role: json['role'],
       status: json['status'],
+      farmId: json['farm_id'],
     );
   }
 
@@ -34,6 +41,7 @@ class User {
       'email': email,
       'role': role,
       'status': status,
+      'farm_id': farmId,
     };
   }
 }
