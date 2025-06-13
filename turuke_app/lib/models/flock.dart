@@ -9,6 +9,7 @@ class Flock {
   final int currentCount;
   final int ageWeeks;
   final int status;
+  final int currentAgeWeeks;
 
   Flock({
     this.id,
@@ -19,6 +20,7 @@ class Flock {
     required this.currentCount,
     required this.ageWeeks,
     required this.status,
+    required this.currentAgeWeeks,
   });
 
   factory Flock.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,7 @@ class Flock {
       currentCount: json['current_count'],
       ageWeeks: json['current_age_weeks'] ?? json['age_weeks'] ?? 0,
       status: json['status'],
+      currentAgeWeeks: json['current_age_weeks'],
     );
   }
 
