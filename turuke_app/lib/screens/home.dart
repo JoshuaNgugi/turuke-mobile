@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/models/egg_data.dart';
+import 'package:turuke_app/models/flock.dart';
+import 'package:turuke_app/models/flock_percentage.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/login.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
@@ -23,7 +26,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   double _overallEggYieldPercent = 0;
   List<Map<String, dynamic>> _monthlyYield = [];
-  List<Map<String, dynamic>> _flockPercentages = [];
+  List<FlockPercentage> _flockPercentages = [];
   Map<String, int> _chickenStatus = {'initial': 0, 'current': 0};
   String _selectedMonth = DateTime.now().toIso8601String().substring(0, 7);
   bool _isLoading = true;
@@ -82,14 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
             jsonDecode(eggYieldRes.body)['percent']?.toDouble() ?? 0;
       }
 
-      if (eggYieldRes.statusCode == 401) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          LoginScreen.routeName,
-          (route) => false,
-        );
-      }
-
       // Fetch egg collections for yesterday
       final eggRes = await http.get(
         Uri.parse(
@@ -97,9 +92,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         headers: headers,
       );
-      List<Map<String, dynamic>> eggs = [];
+      List<EggData> eggs = [];
       if (eggRes.statusCode == 200) {
-        eggs = List<Map<String, dynamic>>.from(jsonDecode(eggRes.body));
+        final List<dynamic> jsonList = jsonDecode(eggRes.body);
+        eggs = jsonList.map((json) => EggData.fromJson(json)).toList();
       }
 
       // Fetch flocks
@@ -107,12 +103,14 @@ class _HomeScreenState extends State<HomeScreen> {
         Uri.parse('${Constants.API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: headers,
       );
-      List<Map<String, dynamic>> flocks = [];
+      List<Flock> flocks = [];
       if (flocksRes.statusCode == 200) {
-        flocks =
-            List<Map<String, dynamic>>.from(
-              jsonDecode(flocksRes.body),
-            ).where((f) => f['status'] == 1).toList();
+        final List<dynamic> jsonList = jsonDecode(flocksRes.body);
+        flocks = jsonList.map((json) => Flock.fromJson(json)).toList();
+
+        // Filter the flocks list to keep only where status equals 1
+        flocks = flocks.where((flock) => flock.status == 1).toList();
+
         _flockCount = flocks.length;
       }
 
@@ -122,26 +120,25 @@ class _HomeScreenState extends State<HomeScreen> {
       _flockPercentages =
           flocks.map((flock) {
             final eggData = eggs.firstWhere(
-              (e) => e['flock_id'] == flock['id'],
-              orElse: () => {'total_eggs': 0},
+              (eggData) => eggData.flockId == flock.id!,
+              orElse: () => EggData.empty(),
             );
-            final totalEggsCollected =
-                double.tryParse(eggData['total_eggs']) ?? 0;
-            final expectedEggs = (flock['current_count'] ?? 0).toDouble();
+            final totalEggsCollected = eggData.totalEggs;
+            final expectedEggs = flock.currentCount;
             final percentage =
                 expectedEggs > 0
                     ? (totalEggsCollected / expectedEggs) * 100
                     : 0.0;
             totalWholeEggs += totalEggsCollected;
             totalExpectedEggs += expectedEggs;
-            String age = flock['current_age_weeks'].toString();
-            return {
-              'id': flock['id'],
-              'breed': flock['breed'],
-              'percentage': percentage,
-              'date': StringUtils.formatDate(eggData['collection_date']),
-              'age': age,
-            };
+            FlockPercentage flockPercentage = FlockPercentage(
+              flockId: flock.id ?? 0,
+              flockName: flock.name,
+              eggPercentage: percentage,
+              collectionDate: StringUtils.formatDate(eggData.collectionDate),
+              flockAge: flock.currentAgeWeeks,
+            );
+            return flockPercentage;
           }).toList();
 
       // Monthly Yield
@@ -235,48 +232,58 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 16),
                     if (_flockCount > 1)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children:
-                            _flockPercentages.map((flock) {
-                              return SizedBox(
-                                width: cardWidth,
-                                height: 110,
-                                child: Card(
-                                  elevation: 3,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          flock['breed'],
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${flock['percentage'].toStringAsFixed(1)}%',
-                                          style: const TextStyle(
-                                            fontSize: 20,
-                                            color: Color.fromARGB(
-                                              255,
-                                              103,
-                                              2,
-                                              121,
-                                            ),
-                                          ),
-                                        ),
-                                        Text(flock['date']),
-                                        Text('Weeks Old: ${flock['age']}'),
-                                      ],
+                      // Replaced Row with GridView.builder for a grid layout
+                      GridView.builder(
+                        shrinkWrap:
+                            true, // Important: to make GridView work inside a SingleChildScrollView
+                        physics:
+                            const NeverScrollableScrollPhysics(), // Important: to prevent GridView from having its own scroll
+                        itemCount: _flockPercentages.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3, // Number of items in each row
+                              crossAxisSpacing:
+                                  8.0, // Horizontal spacing between items
+                              mainAxisSpacing:
+                                  8.0, // Vertical spacing between rows
+                              childAspectRatio:
+                                  0.9, // Adjust this ratio to control card height relative to width
+                            ),
+                        itemBuilder: (context, index) {
+                          final flockPercentage = _flockPercentages[index];
+                          return Card(
+                            elevation: 3,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment
+                                        .center, // Center content vertically
+                                children: [
+                                  Text(
+                                    flockPercentage.flockName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
                                     ),
                                   ),
-                                ),
-                              );
-                            }).toList(),
+                                  Text(
+                                    '${flockPercentage.eggPercentage.toStringAsFixed(1)}%',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      color: Color.fromARGB(255, 103, 2, 121),
+                                    ),
+                                  ),
+                                  Text(flockPercentage.collectionDate),
+                                  Text(
+                                    'Weeks Old: ${flockPercentage.flockAge}',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    const SizedBox(height: 16),
                     const Center(
                       child: Text(
                         'Monthly Egg Yield',
@@ -385,6 +392,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 50),
                   ],
                 ),
               ),
