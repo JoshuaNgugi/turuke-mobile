@@ -66,7 +66,13 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     }
   }
 
-  void _onRouteSelected(String route, [Map<String, dynamic>? args]) {
+  void _onRouteSelected(String route, [Map<String, dynamic>? args, int? role]) {
+    if (role != null && role != UserRole.ADMIN && role != UserRole.MANAGER) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Your account is not authorized to add users')),
+      );
+      return;
+    }
     Navigator.pushNamed(context, route, arguments: args);
   }
 
@@ -85,7 +91,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final dataSource = UsersDataSource(
       users: _users,
       onSelect:
-          (user) => _onRouteSelected(AddUserScreen.routeName, {'user': user}),
+          (user) => _onRouteSelected(AddUserScreen.routeName, {
+            'user': user,
+          }, userRole),
     );
 
     return Scaffold(
