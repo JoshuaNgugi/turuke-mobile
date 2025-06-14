@@ -23,14 +23,14 @@ class _AddUserScreenState extends State<AddUserScreen> {
   String _firstName = '';
   String _lastName = '';
   String _email = '';
-  int _role = 5; // Default: Viewer
   String _password = '';
   bool _isLoading = false;
   String? _error;
   bool _isObscured = true;
   User? _user;
   bool _isEditing = false;
-  int? currentUserRole;
+  bool _isSelfEditing = false;
+  int _currentUserRole = UserRole.VIEWER;
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -40,8 +40,6 @@ class _AddUserScreenState extends State<AddUserScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = Provider.of<AuthProvider>(context);
-      currentUserRole = authProvider.user?.role ?? 5;
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null && args['user'] != null) {
@@ -51,7 +49,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
           _firstNameController.text = _user!.firstName ?? '';
           _lastNameController.text = _user!.lastName ?? '';
           _emailController.text = _user!.email;
-          _role = _user!.role;
+          _currentUserRole = _user!.role;
         });
       }
     });
@@ -87,7 +85,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
           'last_name': _lastName,
           'email': _email,
           'farm_id': farmId,
-          'role': _role,
+          'role': _currentUserRole,
           'password': _password,
         }),
       );
@@ -116,7 +114,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
         'last_name': _lastName,
         'email': _email,
         'farm_id': farmId,
-        'role': _role,
+        'role': _currentUserRole,
         'password': _password,
         'created_at': DateTime.now().toIso8601String(),
       });
@@ -127,13 +125,19 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (currentUserRole != 1 && currentUserRole != 2) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    _currentUserRole = authProvider.user!.role;
+    if (_currentUserRole != UserRole.ADMIN &&
+        _currentUserRole != UserRole.MANAGER) {
       return Scaffold(
         appBar: AppBar(title: const Text('Add User')),
         body: const Center(
           child: Text('Your account is not authorized to add users'),
         ),
       );
+    }
+    if (_user != null) {
+      _isSelfEditing = _user!.id == authProvider.user!.id!;
     }
 
     return Scaffold(
@@ -169,17 +173,25 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   onSaved: (value) => _email = value!,
                 ),
                 DropdownButtonFormField<int>(
-                  decoration: const InputDecoration(labelText: 'Role'),
-                  value: _role,
-                  items: const [
-                    DropdownMenuItem(value: 1, child: Text('Admin')),
-                    DropdownMenuItem(value: 2, child: Text('Manager')),
-                    DropdownMenuItem(value: 3, child: Text('Supervisor')),
-                    DropdownMenuItem(value: 4, child: Text('Assistant')),
-                    DropdownMenuItem(value: 5, child: Text('Viewer')),
-                  ],
-                  onChanged: (value) => setState(() => _role = value!),
+                  decoration: InputDecoration(
+                    labelText: 'Role',
+                    enabled: _isSelfEditing, // Controls visual enabled state
+                  ),
+                  value: _currentUserRole,
+                  items:
+                      UserRole.allRoleValues.map((roleValue) {
+                        return DropdownMenuItem<int>(
+                          value: roleValue,
+                          child: Text(UserRole.getString(roleValue)),
+                        );
+                      }).toList(),
+                  onChanged:
+                      _isSelfEditing
+                          ? null
+                          : (value) =>
+                              setState(() => _currentUserRole = value!),
                   validator: (value) => value == null ? 'Required' : null,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                 ),
                 TextFormField(
                   obscureText: _isObscured,
@@ -211,7 +223,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                 _isLoading
                     ? const CircularProgressIndicator()
                     : ElevatedButton(
-                      onPressed: _saveUser,
+                      onPressed: _isEditing ? null : _saveUser,
                       child: const Text('Add User'),
                     ),
               ],
