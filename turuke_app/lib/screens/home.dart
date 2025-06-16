@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/egg_data.dart';
@@ -13,6 +14,8 @@ import 'package:turuke_app/screens/login.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
 import 'package:turuke_app/utils/http_client.dart' show HttpClient;
 import 'package:turuke_app/utils/string_utils.dart';
+
+var logger = Logger(printer: PrettyPrinter());
 
 class HomeScreen extends StatefulWidget {
   static const String routeName = '/home';
@@ -92,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
       await _fetchMonthlyYield(farmId, headers, monthToFetch);
       await _fetchChickenStatus(farmId, headers);
     } catch (e) {
-      print('Error during _fetchStats coordinator: $e');
+      logger.e('Error during _fetchStats coordinator: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load data: ${e.toString()}')),
@@ -124,12 +127,12 @@ class _HomeScreenState extends State<HomeScreen> {
               jsonDecode(eggYieldRes.body)['percent']?.toDouble() ?? 0;
         }
       } else {
-        print(
+        logger.e(
           'Failed to fetch overall egg yield (${eggYieldRes.statusCode}): ${eggYieldRes.body}',
         );
       }
     } catch (e) {
-      print('Error fetching overall egg yield: $e');
+      logger.e('Error fetching overall egg yield: $e');
       // No need to re-throw, _fetchStats catches it
     }
   }
@@ -155,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _flockCount = flocks.length;
         }
       } else {
-        print(
+        logger.e(
           'Failed to fetch flocks (${flocksRes.statusCode}): ${flocksRes.body}',
         );
       }
@@ -172,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final List<dynamic> jsonList = jsonDecode(eggRes.body);
         eggs = jsonList.map((json) => EggData.fromJson(json)).toList();
       } else {
-        print(
+        logger.e(
           'Failed to fetch egg production (${eggRes.statusCode}): ${eggRes.body}',
         );
       }
@@ -202,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
             }).toList();
       }
     } catch (e) {
-      print('Error fetching flock data and percentages: $e');
+      logger.e('Error fetching flock data and percentages: $e');
     }
   }
 
@@ -226,12 +229,12 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
       } else {
-        print(
+        logger.e(
           'Failed to fetch monthly yield (${monthlyYieldRes.statusCode}): ${monthlyYieldRes.body}',
         );
       }
     } catch (e) {
-      print('Error fetching monthly yield: $e');
+      logger.e('Error fetching monthly yield: $e');
     }
   }
 
@@ -256,12 +259,12 @@ class _HomeScreenState extends State<HomeScreen> {
           };
         }
       } else {
-        print(
+        logger.e(
           'Failed to fetch chicken status (${chickenStatusRes.statusCode}): ${chickenStatusRes.body}',
         );
       }
     } catch (e) {
-      print('Error fetching chicken status: $e');
+      logger.e('Error fetching chicken status: $e');
     }
   }
 
