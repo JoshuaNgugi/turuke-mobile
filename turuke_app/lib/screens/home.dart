@@ -85,34 +85,62 @@ class _HomeScreenState extends State<HomeScreen> {
         .subtract(const Duration(days: 1))
         .toIso8601String()
         .substring(0, 10);
-
+    final monthToFetch = selectedMonth ?? _selectedMonth;
     try {
-      // Egg yield overall stat
+      await _fetchOverallEggYield(farmId!, headers, yesterday);
+      await _fetchFlockDataAndPercentages(farmId, headers, yesterday);
+      await _fetchMonthlyYield(farmId, headers, monthToFetch);
+      await _fetchChickenStatus(farmId, headers);
+    } catch (e) {
+      print('Error during _fetchStats coordinator: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load data: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _fetchOverallEggYield(
+    int farmId,
+    Map<String, String> headers,
+    String date,
+  ) async {
+    try {
       final eggYieldRes = await HttpClient.get(
         context,
         Uri.parse(
-          '${Constants.API_BASE_URL}/stats/egg-yield?farm_id=$farmId&date=$yesterday',
+          '${Constants.API_BASE_URL}/stats/egg-yield?farm_id=$farmId&date=$date',
         ),
         headers: headers,
       );
       if (eggYieldRes.statusCode == 200) {
-        _overallEggYieldPercent =
-            jsonDecode(eggYieldRes.body)['percent']?.toDouble() ?? 0;
+        if (mounted) {
+          _overallEggYieldPercent =
+              jsonDecode(eggYieldRes.body)['percent']?.toDouble() ?? 0;
+        }
+      } else {
+        print(
+          'Failed to fetch overall egg yield (${eggYieldRes.statusCode}): ${eggYieldRes.body}',
+        );
       }
+    } catch (e) {
+      print('Error fetching overall egg yield: $e');
+      // No need to re-throw, _fetchStats catches it
+    }
+  }
 
-      // Fetch egg collections for yesterday
-      final eggRes = await http.get(
-        Uri.parse(
-          '${Constants.API_BASE_URL}/egg-production?farm_id=$farmId&collection_date=$yesterday',
-        ),
-        headers: headers,
-      );
-      List<EggData> eggs = [];
-      if (eggRes.statusCode == 200) {
-        final List<dynamic> jsonList = jsonDecode(eggRes.body);
-        eggs = jsonList.map((json) => EggData.fromJson(json)).toList();
-      }
-
+  // Fetches flock data, egg production, and calculates percentages
+  Future<void> _fetchFlockDataAndPercentages(
+    int farmId,
+    Map<String, String> headers,
+    String date,
+  ) async {
+    try {
       // Fetch flocks
       final flocksRes = await http.get(
         Uri.parse('${Constants.API_BASE_URL}/flocks?farm_id=$farmId'),
@@ -122,50 +150,97 @@ class _HomeScreenState extends State<HomeScreen> {
       if (flocksRes.statusCode == 200) {
         final List<dynamic> jsonList = jsonDecode(flocksRes.body);
         flocks = jsonList.map((json) => Flock.fromJson(json)).toList();
-
-        // Filter the flocks list to keep only where status equals 1
         flocks = flocks.where((flock) => flock.status == 1).toList();
+        if (mounted) {
+          _flockCount = flocks.length;
+        }
+      } else {
+        print(
+          'Failed to fetch flocks (${flocksRes.statusCode}): ${flocksRes.body}',
+        );
+      }
 
-        _flockCount = flocks.length;
+      // Fetch egg collections for the specific date
+      final eggRes = await http.get(
+        Uri.parse(
+          '${Constants.API_BASE_URL}/egg-production?farm_id=$farmId&collection_date=$date',
+        ),
+        headers: headers,
+      );
+      List<EggData> eggs = [];
+      if (eggRes.statusCode == 200) {
+        final List<dynamic> jsonList = jsonDecode(eggRes.body);
+        eggs = jsonList.map((json) => EggData.fromJson(json)).toList();
+      } else {
+        print(
+          'Failed to fetch egg production (${eggRes.statusCode}): ${eggRes.body}',
+        );
       }
 
       // Calculate percentages
-      _flockPercentages =
-          flocks.map((flock) {
-            final eggData = eggs.firstWhere(
-              (eggData) => eggData.flockId == flock.id!,
-              orElse: () => EggData.empty(),
-            );
-            final totalEggsCollected = eggData.totalEggs;
-            final expectedEggs = flock.currentCount;
-            final percentage =
-                expectedEggs > 0
-                    ? (totalEggsCollected / expectedEggs) * 100
-                    : 0.0;
-            FlockPercentage flockPercentage = FlockPercentage(
-              flockId: flock.id ?? 0,
-              flockName: flock.name,
-              eggPercentage: percentage,
-              collectionDate: StringUtils.formatDate(eggData.collectionDate),
-              flockAge: flock.currentAgeWeeks,
-            );
-            return flockPercentage;
-          }).toList();
+      if (mounted) {
+        _flockPercentages =
+            flocks.map((flock) {
+              final eggData = eggs.firstWhere(
+                (eggData) => eggData.flockId == flock.id!,
+                orElse: () => EggData.empty(),
+              );
+              final totalEggsCollected = eggData.totalEggs;
+              final expectedEggs = flock.currentCount;
+              final percentage =
+                  expectedEggs > 0
+                      ? (totalEggsCollected / expectedEggs) * 100
+                      : 0.0;
+              FlockPercentage flockPercentage = FlockPercentage(
+                flockId: flock.id ?? 0,
+                flockName: flock.name,
+                eggPercentage: percentage,
+                collectionDate: StringUtils.formatDate(eggData.collectionDate),
+                flockAge: flock.currentAgeWeeks,
+              );
+              return flockPercentage;
+            }).toList();
+      }
+    } catch (e) {
+      print('Error fetching flock data and percentages: $e');
+    }
+  }
 
-      // Monthly Yield
+  // Fetche monthly egg yield data
+  Future<void> _fetchMonthlyYield(
+    int farmId,
+    Map<String, String> headers,
+    String month,
+  ) async {
+    try {
       final monthlyYieldRes = await http.get(
         Uri.parse(
-          '${Constants.API_BASE_URL}/stats/monthly-yield?farm_id=$farmId&month=$_selectedMonth',
+          '${Constants.API_BASE_URL}/stats/monthly-yield?farm_id=$farmId&month=$month',
         ),
         headers: headers,
       );
       if (monthlyYieldRes.statusCode == 200) {
-        _monthlyYield = List<Map<String, dynamic>>.from(
-          jsonDecode(monthlyYieldRes.body)['data'],
+        if (mounted) {
+          _monthlyYield = List<Map<String, dynamic>>.from(
+            jsonDecode(monthlyYieldRes.body)['data'],
+          );
+        }
+      } else {
+        print(
+          'Failed to fetch monthly yield (${monthlyYieldRes.statusCode}): ${monthlyYieldRes.body}',
         );
       }
+    } catch (e) {
+      print('Error fetching monthly yield: $e');
+    }
+  }
 
-      // Chicken Status
+  // Fetche chicken status data
+  Future<void> _fetchChickenStatus(
+    int farmId,
+    Map<String, String> headers,
+  ) async {
+    try {
       final chickenStatusRes = await http.get(
         Uri.parse(
           '${Constants.API_BASE_URL}/stats/chicken-status?farm_id=$farmId',
@@ -173,16 +248,20 @@ class _HomeScreenState extends State<HomeScreen> {
         headers: headers,
       );
       if (chickenStatusRes.statusCode == 200) {
-        final decoded = jsonDecode(chickenStatusRes.body);
-        _chickenStatus = {
-          for (var entry in decoded.entries)
-            entry.key: int.tryParse(entry.value.toString()) ?? 0,
-        };
+        if (mounted) {
+          final decoded = jsonDecode(chickenStatusRes.body);
+          _chickenStatus = {
+            for (var entry in decoded.entries)
+              entry.key: int.tryParse(entry.value.toString()) ?? 0,
+          };
+        }
+      } else {
+        print(
+          'Failed to fetch chicken status (${chickenStatusRes.statusCode}): ${chickenStatusRes.body}',
+        );
       }
     } catch (e) {
-      // Handle offline or errors
-    } finally {
-      setState(() => _isLoading = false);
+      print('Error fetching chicken status: $e');
     }
   }
 
