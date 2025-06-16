@@ -31,11 +31,26 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedMonth = DateTime.now().toIso8601String().substring(0, 7);
   bool _isLoading = true;
   int _flockCount = 0;
+  List<String> _availableMonths = [];
 
   @override
   void initState() {
     super.initState();
+    _generateAvailableMonths();
     _validateSessionAndFetchStats();
+  }
+
+  void _generateAvailableMonths() {
+    final now = DateTime.now();
+    _availableMonths = [];
+    for (int i = 0; i < 12; i++) {
+      // For the last 12 months including current
+      final monthDateTime = DateTime(now.year, now.month - i, 1);
+      // Format as YYYY-MM
+      _availableMonths.add(
+        '${monthDateTime.year}-${monthDateTime.month.toString().padLeft(2, '0')}',
+      );
+    }
   }
 
   Future<void> _validateSessionAndFetchStats() async {
@@ -46,7 +61,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     DateTime? expiresAt = DateTime.tryParse(tokenExpiresAt ?? '');
 
-    if (expiresAt == null || token == null || DateTime.now().isAfter(expiresAt)) {
+    if (expiresAt == null ||
+        token == null ||
+        DateTime.now().isAfter(expiresAt)) {
       await authProvider.logout();
       Navigator.pushNamedAndRemoveUntil(
         context,
@@ -59,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await _fetchStats();
   }
 
-  Future<void> _fetchStats() async {
+  Future<void> _fetchStats({String? selectedMonth}) async {
     setState(() => _isLoading = true);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
@@ -113,8 +130,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       // Calculate percentages
-      double totalWholeEggs = 0.0;
-      double totalExpectedEggs = 0.0;
       _flockPercentages =
           flocks.map((flock) {
             final eggData = eggs.firstWhere(
@@ -127,8 +142,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 expectedEggs > 0
                     ? (totalEggsCollected / expectedEggs) * 100
                     : 0.0;
-            totalWholeEggs += totalEggsCollected;
-            totalExpectedEggs += expectedEggs;
             FlockPercentage flockPercentage = FlockPercentage(
               flockId: flock.id ?? 0,
               flockName: flock.name,
@@ -181,8 +194,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
-    final width = MediaQuery.of(context).size.width;
-    final cardWidth = width / _flockPercentages.length - 16;
     return Scaffold(
       appBar: AppBar(title: Text('Farm Stats')),
       drawer: AppNavigationDrawer(
@@ -282,10 +293,61 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                       ),
-                    const Center(
-                      child: Text(
-                        'Monthly Egg Yield',
-                        style: TextStyle(fontSize: 18),
+                    // --- Monthly Egg Yield Chart with Dropdown ---
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 0.0,
+                      ), // Adjust horizontal padding as needed
+                      child: Row(
+                        mainAxisAlignment:
+                            MainAxisAlignment
+                                .spaceBetween, // Distribute space between items
+                        children: [
+                          const Text(
+                            'Monthly Egg Yield',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            // Allow the dropdown to take available horizontal space
+                            child: DropdownButtonFormField<String>(
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'Select Month',
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ), // Adjust padding
+                              ),
+                              value: _selectedMonth,
+                              items:
+                                  _availableMonths.map((String month) {
+                                    return DropdownMenuItem<String>(
+                                      value: month,
+                                      child: Text(
+                                        StringUtils.formatMonthDisplay(month),
+                                      ),
+                                    );
+                                  }).toList(),
+                              onChanged: (String? newValue) {
+                                if (newValue != null &&
+                                    newValue != _selectedMonth) {
+                                  setState(() {
+                                    _selectedMonth = newValue;
+                                  });
+                                  _fetchStats(
+                                    selectedMonth: newValue,
+                                  ); // Re-fetch data for the new month
+                                }
+                              },
+                              isExpanded:
+                                  true, // Make dropdown expand to fill available width
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 16),
