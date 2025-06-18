@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -10,6 +11,10 @@ import 'package:turuke_app/datasources/egg_collection_datasource.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
+import 'package:turuke_app/utils/string_utils.dart';
+import 'package:turuke_app/utils/system_utils.dart';
+
+var logger = Logger(printer: PrettyPrinter());
 
 class EggCollectionListScreen extends StatefulWidget {
   static const String routeName = '/egg-collection-list';
@@ -22,9 +27,13 @@ class EggCollectionListScreen extends StatefulWidget {
 
 class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
   List<Map<String, dynamic>> _eggCollections = [];
-  List<Map<String, dynamic>> _flocks = [];
   bool _isLoading = true;
   final int _rowsPerPage = 10;
+
+  List<Map<String, dynamic>> _flocksForDropdown = [];
+  int? _selectedFlockId; // null means 'All Flocks'
+  String _selectedMonth = DateTime.now().toIso8601String().substring(0, 7);
+  List<String> _availableMonths = SystemUtils.generateAvailableMonths();
 
   @override
   void initState() {
@@ -40,42 +49,129 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
 
     try {
       // Fetch flocks
-      final flocksRes = await http.get(
-        Uri.parse('${Constants.API_BASE_URL}/flocks?farm_id=$farmId'),
-        headers: headers,
-      );
-      if (flocksRes.statusCode == 200) {
-        _flocks = List<Map<String, dynamic>>.from(jsonDecode(flocksRes.body));
-      }
+      await _fetchFlocksAndPrepareDropdown(farmId!, headers);
 
       // Fetch egg collections
+      String eggProductionUrl =
+          '${Constants.API_BASE_URL}/egg-production?farm_id=$farmId';
+      if (_selectedFlockId != null) {
+        eggProductionUrl += '&flock_id=$_selectedFlockId';
+      }
+      if (_selectedMonth.isNotEmpty) {
+        eggProductionUrl += '&month=$_selectedMonth';
+      }
+
       final eggRes = await http.get(
-        Uri.parse('${Constants.API_BASE_URL}/egg-production?farm_id=$farmId'),
+        Uri.parse(eggProductionUrl),
         headers: headers,
       );
+
       if (eggRes.statusCode == 200) {
         _eggCollections = List<Map<String, dynamic>>.from(
           jsonDecode(eggRes.body),
         );
       } else {
         // Offline: Fetch from sqflite
-        final db = await openDatabase(
-          path.join(await getDatabasesPath(), 'turuke.db'),
+        logger.e(
+          'API fetch failed (${eggRes.statusCode}). Falling back to offline data.',
         );
-        final synced = await db.query('egg_production');
-        final pending = await db.query('egg_pending');
-        _eggCollections = [...synced, ...pending];
+        await _loadOfflineEggCollections();
       }
     } catch (e) {
       // Offline fallback
-      final db = await openDatabase(
-        path.join(await getDatabasesPath(), 'turuke.db'),
+      logger.e('Error fetching data: $e. Falling back to offline data.');
+      await _loadOfflineEggCollections();
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _fetchFlocksAndPrepareDropdown(
+    int farmId,
+    Map<String, String> headers,
+  ) async {
+    try {
+      final flocksRes = await http.get(
+        Uri.parse('${Constants.API_BASE_URL}/flocks?farm_id=$farmId'),
+        headers: headers,
       );
+      if (flocksRes.statusCode == 200) {
+        final List<dynamic> jsonList = jsonDecode(flocksRes.body);
+        List<Map<String, dynamic>> fetchedFlocks =
+            List<Map<String, dynamic>>.from(jsonList);
+
+        if (mounted) {
+          // Add "All Flocks" option
+          _flocksForDropdown = [
+            {'id': null, 'name': 'All Flocks'},
+          ];
+          _flocksForDropdown.addAll(
+            fetchedFlocks.map(
+              (flock) => {'id': flock['id'], 'name': flock['name']},
+            ),
+          );
+
+          // If _selectedFlockId is not yet set (initial load), default to "All Flocks"
+          _selectedFlockId ??= null;
+        }
+      } else {
+        logger.e(
+          'Failed to fetch flocks (${flocksRes.statusCode}): ${flocksRes.body}',
+        );
+        // If flocks cannot be fetched, dropdown will only have "All Flocks"
+        if (mounted) {
+          _flocksForDropdown = [
+            {'id': null, 'name': 'All Flocks'},
+          ];
+          _selectedFlockId = null;
+        }
+      }
+    } catch (e) {
+      logger.e('Error fetching flocks: $e');
+      if (mounted) {
+        _flocksForDropdown = [
+          {'id': null, 'name': 'All Flocks'},
+        ];
+        _selectedFlockId = null;
+      }
+    }
+  }
+
+  Future<void> _loadOfflineEggCollections() async {
+    try {
+      final databasePath = await getDatabasesPath();
+      final db = await openDatabase(path.join(databasePath, 'turuke.db'));
       final synced = await db.query('egg_production');
       final pending = await db.query('egg_pending');
-      _eggCollections = [...synced, ...pending];
-    } finally {
-      setState(() => _isLoading = false);
+
+      List<Map<String, dynamic>> offlineCollections = [...synced, ...pending];
+
+      // Apply in-memory filtering if offline and filters are set
+      if (_selectedFlockId != null) {
+        offlineCollections =
+            offlineCollections
+                .where((item) => item['flock_id'] == _selectedFlockId)
+                .toList();
+      }
+      if (_selectedMonth.isNotEmpty) {
+        offlineCollections =
+            offlineCollections.where((item) {
+              final collectionDate = item['collection_date']?.toString();
+              return collectionDate != null &&
+                  collectionDate.startsWith(_selectedMonth);
+            }).toList();
+      }
+
+      if (mounted) {
+        _eggCollections = offlineCollections;
+      }
+    } catch (e) {
+      logger.e('Error loading offline egg collections: $e');
+      if (mounted) {
+        _eggCollections = []; // Clear data if offline load fails
+      }
     }
   }
 
@@ -102,58 +198,131 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : _eggCollections.isEmpty
+              : _eggCollections.isEmpty && !_isLoading
               ? const Center(child: Text('No egg collections found'))
               : SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: MediaQuery.of(context).size.width,
-                  ),
-                  child: PaginatedDataTable(
-                    showCheckboxColumn: false,
-                    columns: [
-                      const DataColumn(
-                        label: Text(
-                          'Flock',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<int?>(
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'Select Flock',
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                              ),
+                              value: _selectedFlockId,
+                              items:
+                                  _flocksForDropdown.map((flock) {
+                                    return DropdownMenuItem<int?>(
+                                      value: flock['id'] as int?,
+                                      child: Text(flock['name'].toString()),
+                                    );
+                                  }).toList(),
+                              onChanged: (int? newValue) {
+                                if (newValue != _selectedFlockId) {
+                                  setState(() {
+                                    _selectedFlockId = newValue;
+                                  });
+                                  _fetchData(); // Re-fetch data with new flock filter
+                                }
+                              },
+                              isExpanded: true,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'Select Month',
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                              ),
+                              value: _selectedMonth,
+                              items:
+                                  _availableMonths.map((String month) {
+                                    return DropdownMenuItem<String>(
+                                      value: month,
+                                      child: Text(
+                                        StringUtils.formatMonthDisplay(month),
+                                      ),
+                                    );
+                                  }).toList(),
+                              onChanged: (String? newValue) {
+                                if (newValue != null &&
+                                    newValue != _selectedMonth) {
+                                  setState(() {
+                                    _selectedMonth = newValue;
+                                  });
+                                  _fetchData(); // Re-fetch data with new month filter
+                                }
+                              },
+                              isExpanded: true,
+                            ),
+                          ),
+                        ],
                       ),
-                      const DataColumn(
-                        label: Text(
-                          'Date',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                    ),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: MediaQuery.of(context).size.width,
                       ),
-                      const DataColumn(
-                        label: Text(
-                          'Whole Eggs',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                      child: PaginatedDataTable(
+                        showCheckboxColumn: false,
+                        columns: const [
+                          DataColumn(
+                            label: Text(
+                              'Flock',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Date',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Whole Eggs',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Broken Eggs',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Total',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                        source: dataSource,
+                        rowsPerPage: _rowsPerPage,
+                        columnSpacing: 16,
+                        horizontalMargin: 16,
                       ),
-                      const DataColumn(
-                        label: Text(
-                          'Broken Eggs',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const DataColumn(
-                        label: Text(
-                          'Total',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                    source: dataSource,
-                    rowsPerPage: _rowsPerPage,
-                    columnSpacing: 16,
-                    horizontalMargin: 16,
-                  ),
+                    ),
+                  ],
                 ),
               ),
       floatingActionButton: FloatingActionButton(
         onPressed:
-            _flocks.isEmpty
-                ? null
+            _flocksForDropdown.isEmpty
+                ? null // Disable if no flocks are loaded (even "All")
                 : () => _onRouteSelected(EggCollectionScreen.routeName),
         tooltip: 'Add Egg Collection',
         child: const Icon(Icons.add),
