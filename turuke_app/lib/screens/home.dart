@@ -14,6 +14,7 @@ import 'package:turuke_app/screens/login.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
 import 'package:turuke_app/utils/http_client.dart' show HttpClient;
 import 'package:turuke_app/utils/string_utils.dart';
+import 'package:turuke_app/utils/system_utils.dart';
 
 var logger = Logger(printer: PrettyPrinter());
 
@@ -34,27 +35,15 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedMonth = DateTime.now().toIso8601String().substring(0, 7);
   bool _isLoading = true;
   int _flockCount = 0;
-  List<String> _availableMonths = [];
+  List<String> _availableMonths = SystemUtils.generateAvailableMonths();
 
   @override
   void initState() {
     super.initState();
-    _generateAvailableMonths();
     _validateSessionAndFetchStats();
   }
 
-  void _generateAvailableMonths() {
-    final now = DateTime.now();
-    _availableMonths = [];
-    for (int i = 0; i < 12; i++) {
-      // For the last 12 months including current
-      final monthDateTime = DateTime(now.year, now.month - i, 1);
-      // Format as YYYY-MM
-      _availableMonths.add(
-        '${monthDateTime.year}-${monthDateTime.month.toString().padLeft(2, '0')}',
-      );
-    }
-  }
+  
 
   Future<void> _validateSessionAndFetchStats() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
