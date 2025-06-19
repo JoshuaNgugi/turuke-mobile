@@ -16,7 +16,7 @@ Future<Database> initDatabase() async {
         'CREATE TABLE egg_pending(id TEXT PRIMARY KEY, flock_id INTEGER, collection_date TEXT, whole_eggs INTEGER, broken_eggs INTEGER)',
       );
       await db.execute(
-        'CREATE TABLE flock_pending(id TEXT PRIMARY KEY, farm_id INTEGER, breed TEXT, arrival_date TEXT, initial_count INTEGER, age_weeks INTEGER, status TEXT)',
+        'CREATE TABLE flock_pending(id TEXT PRIMARY KEY, farm_id INTEGER, breed TEXT, arrival_date TEXT, initial_count INTEGER, current_count INTEGER, age_weeks INTEGER, status TEXT)',
       );
       await db.execute(
         'CREATE TABLE vaccination_pending(id TEXT PRIMARY KEY, flock_id INTEGER, vaccine_name TEXT, vaccination_date TEXT, notes TEXT)',
