@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/datasources/egg_collection_datasource.dart';
+import 'package:turuke_app/models/egg_data.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
@@ -27,10 +28,10 @@ class EggCollectionListScreen extends StatefulWidget {
 }
 
 class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
-  List<Map<String, dynamic>> _eggCollections = [];
   bool _isLoading = true;
   final int _rowsPerPage = 10;
 
+  List<EggData> _eggCollections = [];
   List<Flock> _flocksForDropdown = [];
   int? _selectedFlockId; // null means 'All Flocks'
   String _selectedMonth = DateTime.now().toIso8601String().substring(0, 7);
@@ -68,9 +69,9 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
       );
 
       if (eggRes.statusCode == 200) {
-        _eggCollections = List<Map<String, dynamic>>.from(
-          jsonDecode(eggRes.body),
-        );
+        final List<dynamic> jsonList = jsonDecode(eggRes.body);
+        _eggCollections =
+            jsonList.map((json) => EggData.fromJson(json)).toList();
       } else {
         // Offline: Fetch from sqflite
         logger.e(
@@ -144,24 +145,30 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     try {
       final databasePath = await getDatabasesPath();
       final db = await openDatabase(path.join(databasePath, 'turuke.db'));
-      final synced = await db.query('egg_production');
-      final pending = await db.query('egg_pending');
+      final List<Map<String, Object?>> synced = await db.query(
+        'egg_production',
+      );
+      final List<Map<String, Object?>> pending = await db.query('egg_pending');
 
-      List<Map<String, dynamic>> offlineCollections = [...synced, ...pending];
+      List<EggData> syncedEggData =
+          synced.map((map) => EggData.fromJson(map)).toList();
+      List<EggData> pendingEggData =
+          pending.map((map) => EggData.fromJson(map)).toList();
+
+      List<EggData> offlineCollections = [...syncedEggData, ...pendingEggData];
 
       // Apply in-memory filtering if offline and filters are set
       if (_selectedFlockId != null) {
         offlineCollections =
             offlineCollections
-                .where((item) => item['flock_id'] == _selectedFlockId)
+                .where((eggData) => eggData.flockId == _selectedFlockId)
                 .toList();
       }
       if (_selectedMonth.isNotEmpty) {
         offlineCollections =
-            offlineCollections.where((item) {
-              final collectionDate = item['collection_date']?.toString();
-              return collectionDate != null &&
-                  collectionDate.startsWith(_selectedMonth);
+            offlineCollections.where((eggData) {
+              final collectionDate = eggData.collectionDate;
+              return collectionDate.startsWith(_selectedMonth);
             }).toList();
       }
 

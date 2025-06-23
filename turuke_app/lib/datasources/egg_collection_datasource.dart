@@ -1,32 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:turuke_app/models/egg_data.dart';
 import 'package:turuke_app/utils/string_utils.dart';
 
 class EggCollectionDataSource extends DataTableSource {
-  final List<Map<String, dynamic>> _eggCollections;
-  final Function(Map<String, dynamic>)? onSelect; // Add onSelect callback
+  final List<EggData> _eggCollections;
+  final Function(EggData)? onSelect;
 
   EggCollectionDataSource({
-    required List<Map<String, dynamic>> eggCollections,
+    required List<EggData> eggCollections,
     this.onSelect,
   }) : _eggCollections = eggCollections;
 
   @override
   DataRow? getRow(int index) {
     if (index >= _eggCollections.length) return null;
-    final entry = _eggCollections[index];
-    final total = (entry['whole_eggs'] ?? 0) + (entry['broken_eggs'] ?? 0);
+    final eggData = _eggCollections[index];
     return DataRow(
       onSelectChanged: (selected) {
         if (selected == true && onSelect != null) {
-          onSelect!(entry); // Trigger onSelect when row is tapped
+          onSelect!(eggData); // Trigger onSelect when row is tapped
         }
       },
       cells: [
-        DataCell(Text('${entry['breed'] ?? 0}')), // TODO: change to name
-        DataCell(Text(StringUtils.formatDate(entry['collection_date']))),
-        DataCell(Text('${entry['whole_eggs'] ?? 0}')),
-        DataCell(Text('${entry['broken_eggs'] ?? 0}')),
-        DataCell(Text('$total')),
+        DataCell(Text('${eggData.flockName ?? 0}')), // TODO: change to name
+        DataCell(Text(StringUtils.formatDate(eggData.collectionDate))),
+        DataCell(Text('${eggData.wholeEggs ?? 0}')),
+        DataCell(Text('${eggData.brokenEggs ?? 0}')),
+        DataCell(Text('${eggData.totalEggs}')),
       ],
     );
   }
