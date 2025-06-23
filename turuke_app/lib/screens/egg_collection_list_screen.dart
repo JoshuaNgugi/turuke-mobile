@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/datasources/egg_collection_datasource.dart';
+import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
 import 'package:turuke_app/screens/navigation_drawer.dart';
@@ -30,7 +31,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
   bool _isLoading = true;
   final int _rowsPerPage = 10;
 
-  List<Map<String, dynamic>> _flocksForDropdown = [];
+  List<Flock> _flocksForDropdown = [];
   int? _selectedFlockId; // null means 'All Flocks'
   String _selectedMonth = DateTime.now().toIso8601String().substring(0, 7);
   List<String> _availableMonths = SystemUtils.generateAvailableMonths();
@@ -92,26 +93,30 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     int farmId,
     Map<String, String> headers,
   ) async {
+    Flock allFlocks = Flock(
+      farmId: 0,
+      name: 'All Flocks',
+      arrivalDate: DateTime.now().toIso8601String(),
+      initialCount: 0,
+      currentCount: 0,
+      ageWeeks: 0,
+      status: 0,
+      currentAgeWeeks: 0,
+    );
     try {
       final flocksRes = await http.get(
         Uri.parse('${Constants.API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: headers,
       );
+      List<Flock> flocks = [];
       if (flocksRes.statusCode == 200) {
         final List<dynamic> jsonList = jsonDecode(flocksRes.body);
-        List<Map<String, dynamic>> fetchedFlocks =
-            List<Map<String, dynamic>>.from(jsonList);
+        flocks = jsonList.map((json) => Flock.fromJson(json)).toList();
 
         if (mounted) {
           // Add "All Flocks" option
-          _flocksForDropdown = [
-            {'id': null, 'name': 'All Flocks'},
-          ];
-          _flocksForDropdown.addAll(
-            fetchedFlocks.map(
-              (flock) => {'id': flock['id'], 'name': flock['name']},
-            ),
-          );
+          _flocksForDropdown = [allFlocks];
+          _flocksForDropdown.addAll(flocks.map((flock) => flock));
 
           // If _selectedFlockId is not yet set (initial load), default to "All Flocks"
           _selectedFlockId ??= null;
@@ -122,18 +127,14 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
         );
         // If flocks cannot be fetched, dropdown will only have "All Flocks"
         if (mounted) {
-          _flocksForDropdown = [
-            {'id': null, 'name': 'All Flocks'},
-          ];
+          _flocksForDropdown = [allFlocks];
           _selectedFlockId = null;
         }
       }
     } catch (e) {
       logger.e('Error fetching flocks: $e');
       if (mounted) {
-        _flocksForDropdown = [
-          {'id': null, 'name': 'All Flocks'},
-        ];
+        _flocksForDropdown = [allFlocks];
         _selectedFlockId = null;
       }
     }
@@ -221,8 +222,8 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
                               items:
                                   _flocksForDropdown.map((flock) {
                                     return DropdownMenuItem<int?>(
-                                      value: flock['id'] as int?,
-                                      child: Text(flock['name'].toString()),
+                                      value: flock.id,
+                                      child: Text(flock.name),
                                     );
                                   }).toList(),
                               onChanged: (int? newValue) {
