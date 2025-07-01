@@ -206,126 +206,75 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : _eggCollections.isEmpty && !_isLoading
-              ? const Center(child: Text('No egg collections found'))
-              : SingleChildScrollView(
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<int?>(
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText: 'Select Flock',
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
+              : Column(
+                children: [
+                  _buildFilterOptions(),
+                  Expanded(
+                    child:
+                        _eggCollections.isEmpty
+                            ? const Center(
+                              child: Text(
+                                'No egg collections found for the selected filters.',
                               ),
-                              value: _selectedFlockId,
-                              items:
-                                  _flocksForDropdown.map((flock) {
-                                    return DropdownMenuItem<int?>(
-                                      value: flock.id,
-                                      child: Text(flock.name),
-                                    );
-                                  }).toList(),
-                              onChanged: (int? newValue) {
-                                if (newValue != _selectedFlockId) {
-                                  setState(() {
-                                    _selectedFlockId = newValue;
-                                  });
-                                  _fetchData(); // Re-fetch data with new flock filter
-                                }
-                              },
-                              isExpanded: true,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText: 'Select Month',
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
+                            )
+                            : SingleChildScrollView(
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minWidth: MediaQuery.of(context).size.width,
                                 ),
-                              ),
-                              value: _selectedMonth,
-                              items:
-                                  _availableMonths.map((String month) {
-                                    return DropdownMenuItem<String>(
-                                      value: month,
-                                      child: Text(
-                                        StringUtils.formatMonthDisplay(month),
+                                child: PaginatedDataTable(
+                                  showCheckboxColumn: false,
+                                  columns: const [
+                                    DataColumn(
+                                      label: Text(
+                                        'Flock',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    );
-                                  }).toList(),
-                              onChanged: (String? newValue) {
-                                if (newValue != null &&
-                                    newValue != _selectedMonth) {
-                                  setState(() {
-                                    _selectedMonth = newValue;
-                                  });
-                                  _fetchData(); // Re-fetch data with new month filter
-                                }
-                              },
-                              isExpanded: true,
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Date',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Whole Eggs',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Broken Eggs',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Total',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  source: dataSource,
+                                  rowsPerPage: _rowsPerPage,
+                                  columnSpacing: 16,
+                                  horizontalMargin: 16,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minWidth: MediaQuery.of(context).size.width,
-                      ),
-                      child: PaginatedDataTable(
-                        showCheckboxColumn: false,
-                        columns: const [
-                          DataColumn(
-                            label: Text(
-                              'Flock',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'Date',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'Whole Eggs',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'Broken Eggs',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'Total',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                        source: dataSource,
-                        rowsPerPage: _rowsPerPage,
-                        columnSpacing: 16,
-                        horizontalMargin: 16,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
       floatingActionButton: FloatingActionButton(
         onPressed:
@@ -334,6 +283,75 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
                 : () => _onRouteSelected(EggCollectionScreen.routeName),
         tooltip: 'Add Egg Collection',
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildFilterOptions() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: DropdownButtonFormField<int?>(
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Select Flock',
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+              value: _selectedFlockId,
+              items:
+                  _flocksForDropdown.map((flock) {
+                    return DropdownMenuItem<int?>(
+                      value: flock.id,
+                      child: Text(flock.name),
+                    );
+                  }).toList(),
+              onChanged: (int? newValue) {
+                if (newValue != _selectedFlockId) {
+                  setState(() {
+                    _selectedFlockId = newValue;
+                  });
+                  _fetchData(); // Re-fetch data with new flock filter
+                }
+              },
+              isExpanded: true,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Select Month',
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+              value: _selectedMonth,
+              items:
+                  _availableMonths.map((String month) {
+                    return DropdownMenuItem<String>(
+                      value: month,
+                      child: Text(StringUtils.formatMonthDisplay(month)),
+                    );
+                  }).toList(),
+              onChanged: (String? newValue) {
+                if (newValue != null && newValue != _selectedMonth) {
+                  setState(() {
+                    _selectedMonth = newValue;
+                  });
+                  _fetchData(); // Re-fetch data with new month filter
+                }
+              },
+              isExpanded: true,
+            ),
+          ),
+        ],
       ),
     );
   }
