@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/add_user_screen.dart';
+import 'package:turuke_app/screens/change_password_screen.dart';
 import 'package:turuke_app/screens/disease_log.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
 import 'package:turuke_app/screens/egg_collection_list_screen.dart';
@@ -60,6 +61,7 @@ class _TurukeAppState extends State<TurukeApp> {
           EggCollectionListScreen.routeName: (ctx) => EggCollectionListScreen(),
           UserManagementScreen.routeName: (ctx) => UserManagementScreen(),
           AddUserScreen.routeName: (ctx) => AddUserScreen(),
+          ChangePasswordScreen.routeName: (ctx) => ChangePasswordScreen(),
         },
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
+import 'package:turuke_app/screens/change_password_screen.dart';
 import 'package:turuke_app/screens/disease_log.dart';
 import 'package:turuke_app/screens/egg_collection.dart';
 import 'package:turuke_app/screens/egg_collection_list_screen.dart';
@@ -117,6 +118,13 @@ class AppNavigationDrawer extends StatelessWidget {
               selected: selectedRoute == UserManagementScreen.routeName,
               onTap: () => onRouteSelected(UserManagementScreen.routeName),
             ),
+          Divider(),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            selected: selectedRoute == ChangePasswordScreen.routeName,
+            onTap: () => onRouteSelected(ChangePasswordScreen.routeName),
+          ),
           Divider(),
           ListTile(
             leading: Icon(Icons.logout, color: Colors.red),
