@@ -47,7 +47,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
-    final userId = authProvider.user!.id; // Get the ID of the logged-in user
+    final userId = authProvider.user!.id;
 
     final String currentPassword = _currentPasswordController.text;
     final String newPassword = _newPasswordController.text;
@@ -55,9 +55,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     try {
       final response = await HttpClient.post(
         context,
-        Uri.parse(
-          '${Constants.API_BASE_URL}/users/change-password',
-        ), // Your backend endpoint
+        Uri.parse('${Constants.API_BASE_URL}/users/change-password'),
         headers: headers,
         body: jsonEncode({
           'user_id': userId,
@@ -87,7 +85,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           );
         }
       } else {
-        // Handle other API errors
         final errorBody = jsonDecode(response.body);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
