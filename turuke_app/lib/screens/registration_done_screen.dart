@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:turuke_app/screens/home.dart';
+import 'package:turuke_app/screens/home_screen.dart';
 
 class RegistrationDoneScreen extends StatefulWidget {
   static const String routeName = '/done';

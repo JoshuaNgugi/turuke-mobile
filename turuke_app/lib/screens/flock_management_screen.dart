@@ -8,7 +8,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/screens/navigation_drawer.dart';
+import 'package:turuke_app/screens/navigation_drawer_screen.dart';
 import 'package:uuid/uuid.dart';
 
 class FlockManagementScreen extends StatefulWidget {

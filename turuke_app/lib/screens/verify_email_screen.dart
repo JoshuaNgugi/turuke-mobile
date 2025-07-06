@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/screens/home.dart';
-import 'package:turuke_app/screens/registration_done.dart';
+import 'package:turuke_app/screens/home_screen.dart';
+import 'package:turuke_app/screens/registration_done_screen.dart';
 import 'package:provider/provider.dart';
 
 class VerifyEmailScreen extends StatefulWidget {

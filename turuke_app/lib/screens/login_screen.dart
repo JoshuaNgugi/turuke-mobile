@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/screens/home.dart';
-import 'package:turuke_app/screens/registration.dart';
+import 'package:turuke_app/screens/home_screen.dart';
+import 'package:turuke_app/screens/registration_screen.dart';
 
 var logger = Logger(printer: PrettyPrinter());
 

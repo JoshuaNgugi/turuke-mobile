@@ -10,7 +10,7 @@ import 'package:turuke_app/datasources/users_datasource.dart';
 import 'package:turuke_app/models/user.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/add_user_screen.dart';
-import 'package:turuke_app/screens/navigation_drawer.dart';
+import 'package:turuke_app/screens/navigation_drawer_screen.dart';
 
 class UserManagementScreen extends StatefulWidget {
   static const String routeName = '/users-management';

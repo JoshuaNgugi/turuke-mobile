@@ -7,20 +7,21 @@ import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/screens/navigation_drawer.dart';
+import 'package:turuke_app/screens/navigation_drawer_screen.dart';
 import 'package:turuke_app/utils/string_utils.dart';
 import 'package:uuid/uuid.dart';
 
-class DiseaseLogScreen extends StatefulWidget {
-  static const String routeName = '/disease-log';
-  const DiseaseLogScreen({super.key});
+class VaccinationLogScreen extends StatefulWidget {
+  static const String routeName = '/vaccination-log';
+
+  const VaccinationLogScreen({super.key});
 
   @override
-  State<DiseaseLogScreen> createState() => _DiseaseLogScreenState();
+  State<VaccinationLogScreen> createState() => _VaccinationLogScreenState();
 }
 
-class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
-  List<Map<String, dynamic>> _diseases = [];
+class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
+  List<Map<String, dynamic>> _vaccinations = [];
   List<Map<String, dynamic>> _flocks = [];
   Database? _db;
 
@@ -31,7 +32,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
     super.initState();
     _initDb();
     _fetchData();
-    _fetchDiseases();
+    _fetchVaccinations();
   }
 
   Future<void> _initDb() async {
@@ -39,7 +40,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
       path.join(await getDatabasesPath(), 'turuke.db'),
       onCreate:
           (db, version) => db.execute(
-            'CREATE TABLE disease_pending(id TEXT PRIMARY KEY, flock_id INTEGER, diagnosis_date TEXT, affected_count INTEGER, notes TEXT)',
+            'CREATE TABLE vaccination_pending(id TEXT PRIMARY KEY, flock_id INTEGER, vaccination_date TEXT, notes TEXT)',
           ),
       version: 1,
     );
@@ -65,40 +66,18 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
     }
   }
 
-  Future<void> _addDisease({
-    required int flockId,
-    required String diseaseName,
-    required DateTime diagnosisDate,
-    required int affectedCount,
-    String? notes,
-  }) async {
-    final data = {
-      'flock_id': flockId,
-      'disease_name': diseaseName,
-      'diagnosis_date': diagnosisDate.toIso8601String().substring(0, 10),
-      'affected_count': affectedCount,
-      if (notes != null) 'notes': notes,
-    };
-    try {} catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Saved offline, will sync later')));
-    }
-  }
-
-  Future<void> _showAddDiseaseDialog() async {
+  Future<void> _showAddVaccinationDialog() async {
     final _formKey = GlobalKey<FormState>();
     int? _flockId;
-    String _diseaseName = '';
-    DateTime _diagnosisDate = DateTime.now();
-    int _affectedCount = 0;
+    String _vaccineName = '';
+    DateTime _vaccinationDate = DateTime.now();
     String _notes = '';
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text('Add Disease'),
+            title: Text('Add Vaccination'),
             content: Form(
               key: _formKey,
               child: SingleChildScrollView(
@@ -120,32 +99,30 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                       onChanged: (value) => _flockId = value,
                     ),
                     TextFormField(
-                      decoration: InputDecoration(labelText: 'Disease Name'),
+                      decoration: InputDecoration(labelText: 'Vaccine Name'),
                       validator: (value) => value!.isEmpty ? 'Required' : null,
-                      onChanged: (value) => _diseaseName = value,
+                      onChanged: (value) => _vaccineName = value,
                     ),
                     TextFormField(
-                      decoration: InputDecoration(labelText: 'Diagnosis Date'),
+                      decoration: InputDecoration(
+                        labelText: 'Vaccination Date',
+                      ),
                       readOnly: true,
                       controller: TextEditingController(
-                        text: _diagnosisDate.toIso8601String().substring(0, 10),
+                        text: _vaccinationDate.toIso8601String().substring(
+                          0,
+                          10,
+                        ),
                       ),
                       onTap: () async {
                         final picked = await showDatePicker(
                           context: context,
-                          initialDate: _diagnosisDate,
+                          initialDate: _vaccinationDate,
                           firstDate: DateTime(2020),
                           lastDate: DateTime.now(),
                         );
-                        if (picked != null) _diagnosisDate = picked;
+                        if (picked != null) _vaccinationDate = picked;
                       },
-                    ),
-                    TextFormField(
-                      decoration: InputDecoration(labelText: 'Affected Count'),
-                      keyboardType: TextInputType.number,
-                      validator: (value) => value!.isEmpty ? 'Required' : null,
-                      onChanged:
-                          (value) => _affectedCount = int.tryParse(value) ?? 0,
                     ),
                     TextFormField(
                       decoration: InputDecoration(
@@ -166,13 +143,13 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                 onPressed: () {
                   if (_formKey.currentState!.validate() && _flockId != null) {
                     Navigator.pop(context, {
-                      'flock_id': _flockId!,
-                      'disease_name': _diseaseName,
-                      'diagnosis_date': _diagnosisDate
+                      // flock_id, vaccine_name, vaccination_date, notes
+                      'flock_id': _flockId,
+                      'vaccine_name': _vaccineName,
+                      'vaccination_date': _vaccinationDate
                           .toIso8601String()
                           .substring(0, 10),
-                      'affected_count': _affectedCount,
-                      'notes': _notes.isEmpty ? null : _notes,
+                      'notes': _notes,
                     });
                   }
                 },
@@ -187,12 +164,12 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
       final data = {'farm_id': authProvider.user!.farmId, ...result};
       try {
         final response = await http.post(
-          Uri.parse('${Constants.API_BASE_URL}/diseases'),
+          Uri.parse('${Constants.API_BASE_URL}/vaccinations'),
           headers: await authProvider.getHeaders(),
           body: jsonEncode(data),
         );
         if (response.statusCode == 201) {
-          _fetchDiseases();
+          _fetchVaccinations();
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Saved successfully')));
@@ -203,30 +180,30 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
           throw Exception('Failed to save');
         }
       } catch (e) {
-        await _db!.insert('disease_pending', {
+        await _db!.insert('vaccination_pending', {
           'id': const Uuid().v4(),
           ...data,
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Saved offline, will sync later')),
         );
-        _fetchDiseases();
+        _fetchVaccinations();
       }
     }
   }
 
-  Future<void> _fetchDiseases() async {
+  Future<void> _fetchVaccinations() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     try {
       final response = await http.get(
         Uri.parse(
-          '${Constants.API_BASE_URL}/diseases?farm_id=${authProvider.user!.farmId}',
+          '${Constants.API_BASE_URL}/vaccinations?farm_id=${authProvider.user!.farmId}',
         ),
         headers: await authProvider.getHeaders(),
       );
       if (response.statusCode == 200) {
         setState(() {
-          _diseases = List<Map<String, dynamic>>.from(
+          _vaccinations = List<Map<String, dynamic>>.from(
             jsonDecode(response.body),
           );
           _isLoading = false;
@@ -244,35 +221,35 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Disease Log')),
+      appBar: AppBar(title: Text('Vaccination Log')),
       drawer: AppNavigationDrawer(
-        selectedRoute: DiseaseLogScreen.routeName,
+        selectedRoute: VaccinationLogScreen.routeName,
         onRouteSelected: _onRouteSelected,
       ),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : _diseases.isEmpty
-              ? const Center(child: Text('No disease records found'))
+              : _vaccinations.isEmpty
+              ? const Center(child: Text('No vaccination records found'))
               : ListView.builder(
                 padding: EdgeInsets.all(16.0),
-                itemCount: _diseases.length,
+                itemCount: _vaccinations.length,
                 itemBuilder: (context, index) {
-                  final disease = _diseases[index];
-                  final diagnosisDate = StringUtils.formatDate(
-                    disease['diagnosis_date'],
+                  final vaccination = _vaccinations[index];
+                  final vaccinationDate = StringUtils.formatDate(
+                    vaccination['vaccination_date'],
                   );
                   return ListTile(
-                    leading: Icon(Icons.sick),
-                    title: Text(disease['disease_name']),
+                    leading: Icon(Icons.vaccines),
+                    title: Text(vaccination['vaccine_name']),
                     subtitle: Text(
-                      'Flock: ${disease['flock_name']} | Affected: ${disease['affected_count']} | Onset : $diagnosisDate',
+                      'Flock: ${vaccination['flock_name']} | Date: $vaccinationDate',
                     ),
                   );
                 },
               ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddDiseaseDialog,
+        onPressed: _showAddVaccinationDialog,
         child: Icon(Icons.add),
       ),
     );

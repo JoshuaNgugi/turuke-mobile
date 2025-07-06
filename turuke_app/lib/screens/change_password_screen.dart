@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
+import 'package:turuke_app/screens/login_screen.dart';
 import 'package:turuke_app/utils/http_client.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -55,7 +56,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     try {
       final response = await HttpClient.post(
         context,
-        Uri.parse('${Constants.API_BASE_URL}/users/change-password'),
+        Uri.parse('${Constants.API_BASE_URL}/change-password'),
         headers: headers,
         body: jsonEncode({
           'user_id': userId,
@@ -69,12 +70,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Password changed successfully!')),
           );
-          Navigator.of(context).pop();
+          // Navigator.of(context).pop();
           // For security, you might want to log the user out after a password change
-          // await authProvider.logout();
-          // if (mounted) {
-          //   Navigator.pushReplacementNamed(context, LoginScreen.routeName);
-          // }
+          await authProvider.logout();
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, LoginScreen.routeName);
+          }
         }
       } else if (response.statusCode == 401) {
         if (mounted) {

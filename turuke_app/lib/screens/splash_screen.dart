@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/screens/home.dart';
-import 'package:turuke_app/screens/login.dart';
+import 'package:turuke_app/screens/home_screen.dart';
+import 'package:turuke_app/screens/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 

@@ -3,14 +3,14 @@ import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/change_password_screen.dart';
-import 'package:turuke_app/screens/disease_log.dart';
-import 'package:turuke_app/screens/egg_collection.dart';
+import 'package:turuke_app/screens/disease_log_screen.dart';
+import 'package:turuke_app/screens/egg_collection_screen.dart';
 import 'package:turuke_app/screens/egg_collection_list_screen.dart';
-import 'package:turuke_app/screens/flock_management.dart';
-import 'package:turuke_app/screens/home.dart';
-import 'package:turuke_app/screens/login.dart';
+import 'package:turuke_app/screens/flock_management_screen.dart';
+import 'package:turuke_app/screens/home_screen.dart';
+import 'package:turuke_app/screens/login_screen.dart';
 import 'package:turuke_app/screens/user_management_screen.dart';
-import 'package:turuke_app/screens/vaccination_log.dart';
+import 'package:turuke_app/screens/vaccination_log_screen.dart';
 
 class AppNavigationDrawer extends StatelessWidget {
   final String selectedRoute;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/user.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/screens/home.dart';
+import 'package:turuke_app/screens/home_screen.dart';
 import 'package:provider/provider.dart';
 
 class RegistrationScreen extends StatefulWidget {
