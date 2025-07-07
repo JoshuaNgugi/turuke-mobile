@@ -8,6 +8,7 @@ import 'package:turuke_app/screens/egg_collection_list_screen.dart';
 import 'package:turuke_app/screens/flock_management_screen.dart';
 import 'package:turuke_app/screens/home_screen.dart';
 import 'package:turuke_app/screens/login_screen.dart';
+import 'package:turuke_app/screens/mortality_list_screen.dart';
 import 'package:turuke_app/screens/registration_screen.dart';
 import 'package:turuke_app/screens/registration_done_screen.dart';
 import 'package:turuke_app/screens/splash_screen.dart';
@@ -62,6 +63,7 @@ class _TurukeAppState extends State<TurukeApp> {
           UserManagementScreen.routeName: (ctx) => UserManagementScreen(),
           AddUserScreen.routeName: (ctx) => AddUserScreen(),
           ChangePasswordScreen.routeName: (ctx) => ChangePasswordScreen(),
+          MortalityListScreen.routeName: (ctx) => MortalityListScreen(),
         },
       ),
     );

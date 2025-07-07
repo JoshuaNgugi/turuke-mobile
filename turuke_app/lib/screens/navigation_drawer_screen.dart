@@ -9,6 +9,7 @@ import 'package:turuke_app/screens/egg_collection_list_screen.dart';
 import 'package:turuke_app/screens/flock_management_screen.dart';
 import 'package:turuke_app/screens/home_screen.dart';
 import 'package:turuke_app/screens/login_screen.dart';
+import 'package:turuke_app/screens/mortality_list_screen.dart';
 import 'package:turuke_app/screens/user_management_screen.dart';
 import 'package:turuke_app/screens/vaccination_log_screen.dart';
 
@@ -110,6 +111,18 @@ class AppNavigationDrawer extends StatelessWidget {
             title: Text('Disease Log'),
             selected: selectedRoute == DiseaseLogScreen.routeName,
             onTap: () => onRouteSelected(DiseaseLogScreen.routeName),
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.dangerous,
+              color:
+                  selectedRoute == MortalityListScreen.routeName
+                      ? Colors.purple
+                      : null,
+            ),
+            title: Text('Mortality'),
+            selected: selectedRoute == MortalityListScreen.routeName,
+            onTap: () => onRouteSelected(MortalityListScreen.routeName),
           ),
           if (userRole == 1 || userRole == 2) // Admin or Manager
             ListTile(
