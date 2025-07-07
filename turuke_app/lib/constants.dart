@@ -1,5 +1,9 @@
 class Constants {
   static const String API_BASE_URL = 'http://localhost:3000/api';
+
+  static const String LAYERS_API_BASE_URL = '$API_BASE_URL/animals/chicken/layers';
+
+  static const String USERS_API_BASE_URL = '$API_BASE_URL/users';
 }
 
 class UserRole {
@@ -25,4 +29,12 @@ class UserRole {
         return 'Viewer';
     }
   }
+
+  static List<int> get allRoleValues => [
+    ADMIN,
+    MANAGER,
+    SUPERVISOR,
+    ASSISTANT,
+    VIEWER,
+  ];
 }

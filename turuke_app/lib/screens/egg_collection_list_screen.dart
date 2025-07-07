@@ -55,7 +55,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
 
       // Fetch egg collections
       String eggProductionUrl =
-          '${Constants.API_BASE_URL}/egg-production?farm_id=$farmId';
+          '${Constants.LAYERS_API_BASE_URL}/egg-production?farm_id=$farmId';
       if (_selectedFlockId != null) {
         eggProductionUrl += '&flock_id=$_selectedFlockId';
       }
@@ -106,7 +106,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     );
     try {
       final flocksRes = await http.get(
-        Uri.parse('${Constants.API_BASE_URL}/flocks?farm_id=$farmId'),
+        Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: headers,
       );
       List<Flock> flocks = [];

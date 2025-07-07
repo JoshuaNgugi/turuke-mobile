@@ -56,7 +56,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     try {
       final response = await HttpClient.post(
         context,
-        Uri.parse('${Constants.API_BASE_URL}/change-password'),
+        Uri.parse('${Constants.USERS_API_BASE_URL}/change-password'),
         headers: headers,
         body: jsonEncode({
           'user_id': userId,

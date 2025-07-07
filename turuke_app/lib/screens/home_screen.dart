@@ -106,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final eggYieldRes = await HttpClient.get(
         context,
         Uri.parse(
-          '${Constants.API_BASE_URL}/stats/egg-yield?farm_id=$farmId&date=$date',
+          '${Constants.LAYERS_API_BASE_URL}/stats/egg-yield?farm_id=$farmId&date=$date',
         ),
         headers: headers,
       );
@@ -135,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       // Fetch flocks
       final flocksRes = await http.get(
-        Uri.parse('${Constants.API_BASE_URL}/flocks?farm_id=$farmId'),
+        Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: headers,
       );
       List<Flock> flocks = [];
@@ -155,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Fetch egg collections for the specific date
       final eggRes = await http.get(
         Uri.parse(
-          '${Constants.API_BASE_URL}/egg-production?farm_id=$farmId&collection_date=$date',
+          '${Constants.LAYERS_API_BASE_URL}/egg-production?farm_id=$farmId&collection_date=$date',
         ),
         headers: headers,
       );
@@ -207,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final monthlyYieldRes = await http.get(
         Uri.parse(
-          '${Constants.API_BASE_URL}/stats/monthly-yield?farm_id=$farmId&month=$month',
+          '${Constants.LAYERS_API_BASE_URL}/stats/monthly-yield?farm_id=$farmId&month=$month',
         ),
         headers: headers,
       );
@@ -235,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final chickenStatusRes = await http.get(
         Uri.parse(
-          '${Constants.API_BASE_URL}/stats/chicken-status?farm_id=$farmId',
+          '${Constants.LAYERS_API_BASE_URL}/stats/chicken-status?farm_id=$farmId',
         ),
         headers: headers,
       );

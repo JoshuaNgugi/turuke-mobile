@@ -78,7 +78,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.API_BASE_URL}/users'),
+        Uri.parse('${Constants.USERS_API_BASE_URL}/users'),
         headers: headers,
         body: jsonEncode({
           'first_name': _firstName,

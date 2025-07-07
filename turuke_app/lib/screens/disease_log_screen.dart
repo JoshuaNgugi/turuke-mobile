@@ -54,7 +54,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
     try {
       // Fetch flocks
       final flocksRes = await http.get(
-        Uri.parse('${Constants.API_BASE_URL}/flocks?farm_id=$farmId'),
+        Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: headers,
       );
       if (flocksRes.statusCode == 200) {
@@ -187,7 +187,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
       final data = {'farm_id': authProvider.user!.farmId, ...result};
       try {
         final response = await http.post(
-          Uri.parse('${Constants.API_BASE_URL}/diseases'),
+          Uri.parse('${Constants.LAYERS_API_BASE_URL}/diseases'),
           headers: await authProvider.getHeaders(),
           body: jsonEncode(data),
         );
@@ -220,7 +220,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-          '${Constants.API_BASE_URL}/diseases?farm_id=${authProvider.user!.farmId}',
+          '${Constants.LAYERS_API_BASE_URL}/diseases?farm_id=${authProvider.user!.farmId}',
         ),
         headers: await authProvider.getHeaders(),
       );

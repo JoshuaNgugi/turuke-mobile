@@ -59,7 +59,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-          '${Constants.API_BASE_URL}/flocks?farm_id=${authProvider.user!.farmId}',
+          '${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=${authProvider.user!.farmId}',
         ),
         headers: await authProvider.getHeaders(),
       );
@@ -191,7 +191,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
       final data = {'farm_id': authProvider.user!.farmId, ...result};
       try {
         final response = await http.post(
-          Uri.parse('${Constants.API_BASE_URL}/flocks'),
+          Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks'),
           headers: await authProvider.getHeaders(),
           body: jsonEncode(data),
         );

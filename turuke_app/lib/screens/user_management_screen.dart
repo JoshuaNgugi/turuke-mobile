@@ -40,7 +40,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('${Constants.API_BASE_URL}/users?farm_id=$farmId'),
+        Uri.parse('${Constants.USERS_API_BASE_URL}/users?farm_id=$farmId'),
         headers: headers,
       );
       if (response.statusCode == 200) {

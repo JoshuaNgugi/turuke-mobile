@@ -79,7 +79,7 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-          '${Constants.API_BASE_URL}/flocks?farm_id=${authProvider.user!.farmId}',
+          '${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=${authProvider.user!.farmId}',
         ),
         headers: await authProvider.getHeaders(),
       );
@@ -107,13 +107,13 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
             _isEditing
                 ? await http.patch(
                   Uri.parse(
-                    '${Constants.API_BASE_URL}/egg-production/$_collectionId',
+                    '${Constants.LAYERS_API_BASE_URL}/egg-production/$_collectionId',
                   ),
                   headers: await authProvider.getHeaders(),
                   body: jsonEncode(data),
                 )
                 : await http.post(
-                  Uri.parse('${Constants.API_BASE_URL}/egg-production'),
+                  Uri.parse('${Constants.LAYERS_API_BASE_URL}/egg-production'),
                   headers: await authProvider.getHeaders(),
                   body: jsonEncode(data),
                 );
