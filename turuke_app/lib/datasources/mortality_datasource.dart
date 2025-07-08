@@ -21,8 +21,8 @@ class MortalityDataSource extends DataTableSource {
       },
       cells: [
         DataCell(Text(StringUtils.formatDate(mortalityData.recordedDate))),
-        DataCell(Text('${mortalityData.flockId ?? 0}')),
-        DataCell(Text('${mortalityData.count ?? 0}')),
+        DataCell(Text('${mortalityData.flockName}')),
+        DataCell(Text('${mortalityData.count}')),
       ],
     );
   }

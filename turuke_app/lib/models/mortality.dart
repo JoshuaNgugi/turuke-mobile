@@ -6,6 +6,7 @@ class Mortality {
   final int count;
   final String recordedDate;
   final String? cause;
+  final String? flockName;
 
   Mortality({
     this.id,
@@ -13,6 +14,7 @@ class Mortality {
     required this.count,
     required this.recordedDate,
     this.cause,
+    this.flockName,
   });
 
   Mortality.empty()
@@ -20,15 +22,17 @@ class Mortality {
       flockId = 0,
       recordedDate = '',
       count = 0,
-      cause = '';
+      cause = '',
+      flockName = '';
 
   factory Mortality.fromJson(Map<String, dynamic> json) {
     return Mortality(
       id: json['id'],
       flockId: json['flock_id'],
-      recordedDate: StringUtils.formatDate(json['created_at']),
+      recordedDate: StringUtils.formatDate(json['death_date']),
       count: json['count'],
       cause: json['cause'],
+      flockName: json['flock_name'],
     );
   }
 
@@ -36,7 +40,7 @@ class Mortality {
     return {
       if (id != null) 'id': id,
       'flock_id': flockId,
-      'created_at': recordedDate,
+      'death_date': recordedDate,
       'count': count,
       'cause': cause,
     };

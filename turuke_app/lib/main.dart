@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
+import 'package:turuke_app/screens/add_mortality_screen.dart';
 import 'package:turuke_app/screens/add_user_screen.dart';
 import 'package:turuke_app/screens/change_password_screen.dart';
 import 'package:turuke_app/screens/disease_log_screen.dart';
@@ -64,6 +65,7 @@ class _TurukeAppState extends State<TurukeApp> {
           AddUserScreen.routeName: (ctx) => AddUserScreen(),
           ChangePasswordScreen.routeName: (ctx) => ChangePasswordScreen(),
           MortalityListScreen.routeName: (ctx) => MortalityListScreen(),
+          AddMortalityScreen.routeName: (ctx) => AddMortalityScreen(),
         },
       ),
     );
