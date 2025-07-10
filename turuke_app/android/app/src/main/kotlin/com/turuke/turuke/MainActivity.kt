@@ -1,4 +1,4 @@
-package com.example.turuke_app
+package com.turuke.turuke
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,5 +1,5 @@
 class Constants {
-  static const String API_BASE_URL = 'http://localhost:3000/api';
+  static const String API_BASE_URL = 'http://192.168.156.34:3000/api';
 
   static const String LAYERS_API_BASE_URL = '$API_BASE_URL/animals/chicken/layers';
 
