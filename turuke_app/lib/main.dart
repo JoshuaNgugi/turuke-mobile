@@ -46,6 +46,7 @@ class _TurukeAppState extends State<TurukeApp> {
     return ChangeNotifierProvider(
       create: (_) => AuthProvider(),
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Turuke',
         theme: ThemeData(primarySwatch: Colors.purple),
         initialRoute: SplashScreen.routeName,

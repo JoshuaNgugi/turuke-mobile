@@ -6,6 +6,8 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/models/disease.dart';
+import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer_screen.dart';
 import 'package:turuke_app/utils/string_utils.dart';
@@ -20,8 +22,8 @@ class DiseaseLogScreen extends StatefulWidget {
 }
 
 class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
-  List<Map<String, dynamic>> _diseases = [];
-  List<Map<String, dynamic>> _flocks = [];
+  List<Disease> _diseases = [];
+  List<Flock> _flocks = [];
   Database? _db;
 
   bool _isLoading = true;
@@ -58,7 +60,8 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
         headers: headers,
       );
       if (flocksRes.statusCode == 200) {
-        _flocks = List<Map<String, dynamic>>.from(jsonDecode(flocksRes.body));
+        final List<dynamic> jsonList = jsonDecode(flocksRes.body);
+        _flocks = jsonList.map((json) => Flock.fromJson(json)).toList();
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -96,90 +99,113 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Add Disease'),
-            content: Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DropdownButtonFormField<int>(
-                      hint: Text('Select Flock'),
-                      value: _flockId,
-                      items:
-                          _flocks
-                              .map<DropdownMenuItem<int>>(
-                                (f) => DropdownMenuItem<int>(
-                                  value: f['id'] as int,
-                                  child: Text(f['breed']),
-                                ),
-                              )
-                              .toList(),
-                      onChanged: (value) => _flockId = value,
-                    ),
-                    TextFormField(
-                      decoration: InputDecoration(labelText: 'Disease Name'),
-                      validator: (value) => value!.isEmpty ? 'Required' : null,
-                      onChanged: (value) => _diseaseName = value,
-                    ),
-                    TextFormField(
-                      decoration: InputDecoration(labelText: 'Diagnosis Date'),
-                      readOnly: true,
-                      controller: TextEditingController(
-                        text: _diagnosisDate.toIso8601String().substring(0, 10),
+      builder: (context) {
+        final diagnosisDateController = TextEditingController(
+          text: _diagnosisDate.toIso8601String().substring(0, 10),
+        );
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Add Disease'),
+              content: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DropdownButtonFormField<int>(
+                        hint: Text('Select Flock'),
+                        value: _flockId,
+                        items:
+                            _flocks
+                                .map<DropdownMenuItem<int>>(
+                                  (flock) => DropdownMenuItem<int>(
+                                    value: flock.id,
+                                    child: Text(flock.name),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (value) => setState(() => _flockId = value),
                       ),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _diagnosisDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now(),
-                        );
-                        if (picked != null) _diagnosisDate = picked;
-                      },
-                    ),
-                    TextFormField(
-                      decoration: InputDecoration(labelText: 'Affected Count'),
-                      keyboardType: TextInputType.number,
-                      validator: (value) => value!.isEmpty ? 'Required' : null,
-                      onChanged:
-                          (value) => _affectedCount = int.tryParse(value) ?? 0,
-                    ),
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Notes (Optional)',
+                      TextFormField(
+                        decoration: InputDecoration(labelText: 'Disease Name'),
+                        validator:
+                            (value) => value!.isEmpty ? 'Required' : null,
+                        onChanged: (value) => _diseaseName = value,
                       ),
-                      onChanged: (value) => _notes = value,
-                    ),
-                  ],
+                      TextFormField(
+                        controller: diagnosisDateController,
+                        decoration: InputDecoration(
+                          labelText: 'Diagnosis Date',
+                        ),
+                        readOnly: true,
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _diagnosisDate,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now(),
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              _diagnosisDate = picked;
+                              diagnosisDateController.text = _diagnosisDate
+                                  .toIso8601String()
+                                  .substring(0, 10);
+                            });
+                          }
+                        },
+                      ),
+                      TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'Affected Count',
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator:
+                            (value) => value!.isEmpty ? 'Required' : null,
+                        onChanged:
+                            (value) =>
+                                _affectedCount = int.tryParse(value) ?? 0,
+                      ),
+                      TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'Notes (Optional)',
+                          hintText: 'Enter any notes that will be helpful',
+                        ),
+                        onChanged: (value) => _notes = value,
+                        maxLines: 3,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate() && _flockId != null) {
-                    Navigator.pop(context, {
-                      'flock_id': _flockId!,
-                      'disease_name': _diseaseName,
-                      'diagnosis_date': _diagnosisDate
-                          .toIso8601String()
-                          .substring(0, 10),
-                      'affected_count': _affectedCount,
-                      'notes': _notes.isEmpty ? null : _notes,
-                    });
-                  }
-                },
-                child: Text('Save'),
-              ),
-            ],
-          ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate() && _flockId != null) {
+                      Navigator.pop(context, {
+                        'flock_id': _flockId!,
+                        'disease_name': _diseaseName.trim(),
+                        'diagnosis_date': _diagnosisDate
+                            .toIso8601String()
+                            .substring(0, 10),
+                        'affected_count': _affectedCount,
+                        'notes': _notes.isEmpty ? null : _notes,
+                      });
+                    }
+                  },
+                  child: Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
 
     if (result != null) {
@@ -192,7 +218,6 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
           body: jsonEncode(data),
         );
         if (response.statusCode == 201) {
-          _fetchDiseases();
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Saved successfully')));
@@ -210,6 +235,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Saved offline, will sync later')),
         );
+      } finally {
         _fetchDiseases();
       }
     }
@@ -226,9 +252,8 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
       );
       if (response.statusCode == 200) {
         setState(() {
-          _diseases = List<Map<String, dynamic>>.from(
-            jsonDecode(response.body),
-          );
+          final List<dynamic> jsonList = jsonDecode(response.body);
+          _diseases = jsonList.map((json) => Disease.fromJson(json)).toList();
           _isLoading = false;
         });
       }
@@ -260,13 +285,13 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                 itemBuilder: (context, index) {
                   final disease = _diseases[index];
                   final diagnosisDate = StringUtils.formatDate(
-                    disease['diagnosis_date'],
+                    disease.diagnosisDate,
                   );
                   return ListTile(
                     leading: Icon(Icons.sick),
-                    title: Text(disease['disease_name']),
+                    title: Text(disease.name),
                     subtitle: Text(
-                      'Flock: ${disease['flock_name']} | Affected: ${disease['affected_count']} | Onset : $diagnosisDate',
+                      'Flock: ${disease.flockName} | Affected: ${disease.affectedCount} | Onset : $diagnosisDate',
                     ),
                   );
                 },
