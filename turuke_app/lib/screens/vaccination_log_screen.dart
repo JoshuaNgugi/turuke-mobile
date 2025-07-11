@@ -6,6 +6,8 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/models/flock.dart';
+import 'package:turuke_app/models/vaccination.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer_screen.dart';
 import 'package:turuke_app/utils/string_utils.dart';
@@ -21,8 +23,8 @@ class VaccinationLogScreen extends StatefulWidget {
 }
 
 class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
-  List<Map<String, dynamic>> _vaccinations = [];
-  List<Map<String, dynamic>> _flocks = [];
+  List<Vaccination> _vaccinations = [];
+  List<Flock> _flocks = [];
   Database? _db;
 
   bool _isLoading = true;
@@ -59,7 +61,8 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
         headers: headers,
       );
       if (flocksRes.statusCode == 200) {
-        _flocks = List<Map<String, dynamic>>.from(jsonDecode(flocksRes.body));
+        final List<dynamic> jsonList = jsonDecode(flocksRes.body);
+        _flocks = jsonList.map((json) => Flock.fromJson(json)).toList();
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -75,88 +78,100 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Add Vaccination'),
-            content: Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DropdownButtonFormField<int>(
-                      hint: Text('Select Flock'),
-                      value: _flockId,
-                      items:
-                          _flocks
-                              .map<DropdownMenuItem<int>>(
-                                (f) => DropdownMenuItem<int>(
-                                  value: f['id'] as int,
-                                  child: Text(f['breed']),
-                                ),
-                              )
-                              .toList(),
-                      onChanged: (value) => _flockId = value,
-                    ),
-                    TextFormField(
-                      decoration: InputDecoration(labelText: 'Vaccine Name'),
-                      validator: (value) => value!.isEmpty ? 'Required' : null,
-                      onChanged: (value) => _vaccineName = value,
-                    ),
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Vaccination Date',
+      builder: (context) {
+        final vaccinationDateController = TextEditingController(
+          text: _vaccinationDate.toIso8601String().substring(0, 10),
+        );
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Add Vaccination'),
+              content: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DropdownButtonFormField<int>(
+                        hint: Text('Select Flock'),
+                        value: _flockId,
+                        items:
+                            _flocks
+                                .map<DropdownMenuItem<int>>(
+                                  (flock) => DropdownMenuItem<int>(
+                                    value: flock.id,
+                                    child: Text(flock.name),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (value) => _flockId = value,
+                        validator: (value) => value == null ? 'Required' : null,
                       ),
-                      readOnly: true,
-                      controller: TextEditingController(
-                        text: _vaccinationDate.toIso8601String().substring(
-                          0,
-                          10,
+                      TextFormField(
+                        decoration: InputDecoration(labelText: 'Vaccine Name'),
+                        validator:
+                            (value) => value!.isEmpty ? 'Required' : null,
+                        onChanged: (value) => _vaccineName = value,
+                      ),
+                      TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'Vaccination Date',
                         ),
+                        readOnly: true,
+                        controller: vaccinationDateController,
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _vaccinationDate,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now(),
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              _vaccinationDate = picked;
+                              vaccinationDateController.text = _vaccinationDate
+                                  .toIso8601String()
+                                  .substring(0, 10);
+                            });
+                          }
+                        },
                       ),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _vaccinationDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now(),
-                        );
-                        if (picked != null) _vaccinationDate = picked;
-                      },
-                    ),
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Notes (Optional)',
+                      TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'Notes (Optional)',
+                        ),
+                        onChanged: (value) => _notes = value,
                       ),
-                      onChanged: (value) => _notes = value,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate() && _flockId != null) {
-                    Navigator.pop(context, {
-                      // flock_id, vaccine_name, vaccination_date, notes
-                      'flock_id': _flockId,
-                      'vaccine_name': _vaccineName,
-                      'vaccination_date': _vaccinationDate
-                          .toIso8601String()
-                          .substring(0, 10),
-                      'notes': _notes,
-                    });
-                  }
-                },
-                child: Text('Save'),
-              ),
-            ],
-          ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate() && _flockId != null) {
+                      Navigator.pop(context, {
+                        // flock_id, vaccine_name, vaccination_date, notes
+                        'flock_id': _flockId,
+                        'vaccine_name': _vaccineName,
+                        'vaccination_date': _vaccinationDate
+                            .toIso8601String()
+                            .substring(0, 10),
+                        'notes': _notes,
+                      });
+                    }
+                  },
+                  child: Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
 
     if (result != null) {
@@ -203,9 +218,10 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
       );
       if (response.statusCode == 200) {
         setState(() {
-          _vaccinations = List<Map<String, dynamic>>.from(
-            jsonDecode(response.body),
-          );
+          final List<dynamic> jsonList = jsonDecode(response.body);
+          _vaccinations =
+              jsonList.map((json) => Vaccination.fromJson(json)).toList();
+
           _isLoading = false;
         });
       }
@@ -237,13 +253,13 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                 itemBuilder: (context, index) {
                   final vaccination = _vaccinations[index];
                   final vaccinationDate = StringUtils.formatDate(
-                    vaccination['vaccination_date'],
+                    vaccination.vaccinationDate,
                   );
                   return ListTile(
                     leading: Icon(Icons.vaccines),
-                    title: Text(vaccination['vaccine_name']),
+                    title: Text(vaccination.name),
                     subtitle: Text(
-                      'Flock: ${vaccination['flock_name']} | Date: $vaccinationDate',
+                      'Flock: ${vaccination.flockName} | Date: $vaccinationDate',
                     ),
                   );
                 },
