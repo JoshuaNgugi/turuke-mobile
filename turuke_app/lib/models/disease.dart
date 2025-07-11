@@ -34,7 +34,7 @@ class Disease {
   Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,
-      'farm_id': flockId,
+      'flock_id': flockId,
       'name': name,
       'diagnosis_date': diagnosisDate,
       'affected_count': affectedCount,

@@ -127,6 +127,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                                 )
                                 .toList(),
                         onChanged: (value) => setState(() => _flockId = value),
+                        validator: (value) => value == null ? 'Required' : null,
                       ),
                       TextFormField(
                         decoration: InputDecoration(labelText: 'Disease Name'),
