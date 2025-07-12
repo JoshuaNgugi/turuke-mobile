@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/login_screen.dart';
-
-import '../providers/auth_provider.dart';
 
 class HttpClient {
   static Future<http.Response> get(
