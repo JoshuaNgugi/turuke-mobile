@@ -1,13 +1,19 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
+import 'package:provider/provider.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/home_screen.dart';
 import 'package:turuke_app/screens/login_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart';
+import 'package:turuke_app/sync.dart';
+
+var logger = Logger();
 
 class SplashScreen extends StatefulWidget {
   static const String routeName = '/splash';
+
+  const SplashScreen({super.key});
 
   @override
   _SplashScreenState createState() => _SplashScreenState();
@@ -17,42 +23,33 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeApp();
-    });
+    _initializeApp();
   }
 
   Future<void> _initializeApp() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    bool loadSuccessful = false; // Flag to track success
 
-    try {
-      await authProvider.loadFromPrefs();
-      loadSuccessful = true; // Set to true if loading succeeded
-    } catch (e) {
-      // Log the error for debugging
-      print('Error loading authentication state from preferences: $e');
-      // Optionally, set the token to null explicitly if your loadFromPrefs
-      // might leave it in an indeterminate state on error.
-      // authProvider.clearToken(); // If you have such a method
-      // You might also want to show a toast/snackbar to the user
-      // or set a flag to display a simple error on the splash screen itself.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Redirecting you to log in screen')),
-      );
-      await authProvider.logout();
-    } finally {
-      // Always wait for 2 seconds to show splash, regardless of load success
-      Timer(const Duration(seconds: 2), () {
-        // Ensure the widget is still mounted before attempting navigation
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(
-          context,
-          authProvider.token != null
-              ? HomeScreen.routeName
-              : LoginScreen.routeName,
-        );
-      });
+    // 1. Load authentication data
+    await authProvider.loadFromPrefs();
+
+    // 2. Initialize database
+    final db = await initDatabase(); // Make sure initDatabase is awaited
+
+    // 3. Perform data synchronization
+    // Consider adding error handling or UI feedback for sync
+    await syncPendingData(context, db);
+
+    // 4. Determine initial route based on authentication status
+    if (authProvider.token != null &&
+        authProvider.user != null &&
+        !authProvider.isTokenExpired) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+      }
+    } else {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed(LoginScreen.routeName);
+      }
     }
   }
 
