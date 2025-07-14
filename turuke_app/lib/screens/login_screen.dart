@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
     try {
-      await context.read<AuthProvider>().login(_email, _password);
+      await context.read<AuthProvider>().login(context, _email, _password);
       Navigator.pushReplacementNamed(context, HomeScreen.routeName);
     } catch (e) {
       logger.e(e);

@@ -7,6 +7,7 @@ import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/user.dart';
+import 'package:turuke_app/utils/http_client.dart';
 
 var logger = Logger();
 
@@ -32,9 +33,10 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> register({required User user}) async {
+  Future<void> register(BuildContext context, {required User user}) async {
     try {
-      final response = await http.post(
+      final response = await HttpClient.post(
+        context,
         Uri.parse('${Constants.API_BASE_URL}/auth/register'),
         headers: {'Content-Type': 'application/json'},
         body: user.toJson(),
@@ -63,22 +65,18 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(
+    BuildContext context,
+    String email,
+    String password,
+  ) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse('${Constants.API_BASE_URL}/auth/login'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'email': email, 'password': password}),
-          )
-          .timeout(
-            const Duration(seconds: 15),
-            onTimeout: () {
-              throw TimeoutException(
-                'The login request took too long to respond. Please try again later.',
-              );
-            },
-          );
+      final response = await HttpClient.post(
+        context,
+        Uri.parse('${Constants.API_BASE_URL}/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

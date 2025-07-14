@@ -62,7 +62,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       _error = null;
     });
     try {
-      await context.read<AuthProvider>().register(user: _user);
+      await context.read<AuthProvider>().register(context, user: _user);
       Navigator.pushNamed(context, HomeScreen.routeName);
     } catch (e) {
       setState(() {
