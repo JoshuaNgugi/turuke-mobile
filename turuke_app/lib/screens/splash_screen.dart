@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +6,7 @@ import 'package:turuke_app/screens/home_screen.dart';
 import 'package:turuke_app/screens/login_screen.dart';
 import 'package:turuke_app/sync.dart';
 
-var logger = Logger();
+var logger = Logger(printer: PrettyPrinter());
 
 class SplashScreen extends StatefulWidget {
   static const String routeName = '/splash';
@@ -16,7 +14,7 @@ class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  _SplashScreenState createState() => _SplashScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
@@ -27,62 +25,102 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
+    final startTime = DateTime.now();
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    // 1. Load authentication data
-    await authProvider.loadFromPrefs();
+    try {
+      await authProvider.loadFromPrefs();
 
-    // 2. Initialize database
-    final db = await initDatabase(); // Make sure initDatabase is awaited
+      final db = await initDatabase();
 
-    // 3. Perform data synchronization
-    // Consider adding error handling or UI feedback for sync
-    await syncPendingData(context, db);
+      await syncPendingData(context, db);
+    } catch (e) {
+      logger.e('Error during app initialization/sync: $e');
+    }
 
-    // 4. Determine initial route based on authentication status
+    // Calculate elapsed time and wait if less than minimum splash duration
+    final endTime = DateTime.now();
+    final duration = endTime.difference(startTime);
+    const minSplashDuration = Duration(
+      seconds: 3,
+    ); // Minimum 3 seconds for the splash screen
+
+    if (duration < minSplashDuration) {
+      await Future.delayed(minSplashDuration - duration);
+    }
+
+    // Determine initial route based on authentication status
+    // Ensure context is still mounted before attempting navigation
+    if (!mounted) return;
+
     if (authProvider.token != null &&
         authProvider.user != null &&
         !authProvider.isTokenExpired) {
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
-      }
+      Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
     } else {
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed(LoginScreen.routeName);
-      }
+      Navigator.of(context).pushReplacementNamed(LoginScreen.routeName);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/big-chicken.png',
-              height: 100,
-              width: 100,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Turuke',
-              style: TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                color: Colors.purple,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color.fromARGB(255, 226, 80, 255),
+              Color.fromARGB(255, 103, 2, 121),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/images/big-chicken-withoutbg.png',
+                height: size.height * 0.2, 
+                width: size.height * 0.2,  
+                fit: BoxFit.contain,
               ),
-            ),
-            Text(
-              "Jumpstart your farm's efficiency",
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: const Color.fromARGB(255, 87, 1, 102),
+              const SizedBox(height: 24),
+              const Text(
+                'Turuke',
+                style: TextStyle(
+                  fontSize: 60,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 3,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              const Text(
+                "Jumpstart your farm's efficiency",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: size.height * 0.1),
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                strokeWidth: 4,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Loading...',
+                style: TextStyle(fontSize: 16, color: Colors.white70),
+              ),
+            ],
+          ),
         ),
       ),
     );
