@@ -86,7 +86,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen size for responsive design
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -95,9 +94,8 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              // Darker purple
-              Color.fromARGB(255, 235, 139, 252),
-              Color.fromARGB(255, 103, 2, 121), // Lighter purple
+              Color.fromARGB(255, 226, 80, 255),
+              Color.fromARGB(255, 103, 2, 121),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -109,15 +107,13 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Logo/Icon
                 Image.asset(
-                  'assets/images/big-chicken-withoutbg.png', // Ensure you have this asset
-                  height: size.height * 0.15, // Responsive sizing
+                  'assets/images/big-chicken-withoutbg.png',
+                  height: size.height * 0.15,
                   width: size.height * 0.15,
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 16),
-                // App Title
                 const Text(
                   'Turuke',
                   style: TextStyle(
@@ -125,19 +121,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                     letterSpacing: 2,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 10.0,
-                        color: Colors.black38,
-                        offset: Offset(3.0, 3.0),
-                      ),
-                    ],
                   ),
                 ),
                 const SizedBox(height: 8),
-                // Tagline
                 const Text(
-                  "Jumpstart your farm's efficiency",
+                  "Welcome",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -145,8 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: size.height * 0.05), // Responsive spacing
-                // Login Form Card
+                SizedBox(height: size.height * 0.05),
                 Card(
                   elevation: 10,
                   shape: RoundedRectangleBorder(
@@ -158,9 +145,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Form(
                       key: _formKey,
                       child: Column(
-                        mainAxisSize: MainAxisSize.min, // Take minimum space
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Email Input
                           TextFormField(
                             controller: _emailController,
                             decoration: InputDecoration(
@@ -172,8 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide:
-                                    BorderSide.none, // Hide default border
+                                borderSide: BorderSide.none,
                               ),
                               filled: true,
                               fillColor: Colors.purple.shade50,
@@ -196,7 +181,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                           ),
                           const SizedBox(height: 20),
-                          // Password Input
                           TextFormField(
                             controller: _passwordController,
                             obscureText: _isObscured,
@@ -244,7 +228,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             autocorrect: false,
                           ),
                           const SizedBox(height: 24),
-                          // Sign In Button
                           _isLoading
                               ? const CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation<Color>(
@@ -252,8 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               )
                               : SizedBox(
-                                width:
-                                    double.infinity, // Make button full width
+                                width: double.infinity,
                                 child: ElevatedButton(
                                   onPressed: _login,
                                   style: ElevatedButton.styleFrom(
@@ -262,17 +244,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                       103,
                                       2,
                                       121,
-                                    ), // Button background color
-                                    foregroundColor: Colors.white, // Text color
+                                    ),
+                                    foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 16,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        15,
-                                      ), // Rounded corners
+                                      borderRadius: BorderRadius.circular(15),
                                     ),
-                                    elevation: 5, // Shadow
+                                    elevation: 5,
                                     textStyle: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -282,7 +262,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                           const SizedBox(height: 16),
-                          // Register Link
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -302,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     103,
                                     2,
                                     121,
-                                  ), // Link color
+                                  ),
                                   textStyle: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
