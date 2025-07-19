@@ -6,7 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/constants.dart'; // Ensure this is imported for your colors
 import 'package:turuke_app/datasources/egg_collection_datasource.dart';
 import 'package:turuke_app/models/egg_data.dart';
 import 'package:turuke_app/models/flock.dart';
@@ -29,6 +29,7 @@ class EggCollectionListScreen extends StatefulWidget {
 
 class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
   bool _isLoading = true;
+  bool _isOfflineMode = false; // New state to indicate offline data display
   final int _rowsPerPage = 10;
 
   List<EggData> _eggCollections = [];
@@ -43,17 +44,41 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     _fetchData();
   }
 
+  // Refactored to separate online and offline logic more clearly
   Future<void> _fetchData() async {
-    setState(() => _isLoading = true);
+    if (!mounted) return; // Ensure widget is mounted before setState
+    setState(() {
+      _isLoading = true;
+      _isOfflineMode = false; // Reset offline mode on new fetch attempt
+    });
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
-    final farmId = authProvider.user!.farmId;
+    final farmId = authProvider.user?.farmId; // Use null-safe access
+
+    if (farmId == null) {
+      logger.e('Farm ID is null. Cannot fetch data.');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _eggCollections = [];
+          _flocksForDropdown = [
+            _createAllFlocksOption(),
+          ]; // Ensure dropdown is not empty
+        });
+      }
+      SystemUtils.showSnackBar(
+        context,
+        'Error: Farm ID not found. Please re-login.',
+      );
+      return;
+    }
 
     try {
-      // Fetch flocks
-      await _fetchFlocksAndPrepareDropdown(farmId!, headers);
+      // Always attempt to fetch flocks first
+      await _fetchFlocksAndPrepareDropdown(farmId, headers);
 
-      // Fetch egg collections
+      // Construct URL for egg production
       String eggProductionUrl =
           '${Constants.LAYERS_API_BASE_URL}/egg-production?farm_id=$farmId';
       if (_selectedFlockId != null) {
@@ -70,19 +95,31 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
 
       if (eggRes.statusCode == 200) {
         final List<dynamic> jsonList = jsonDecode(eggRes.body);
-        _eggCollections =
-            jsonList.map((json) => EggData.fromJson(json)).toList();
+        if (mounted) {
+          setState(() {
+            _eggCollections =
+                jsonList.map((json) => EggData.fromJson(json)).toList();
+          });
+        }
       } else {
-        // Offline: Fetch from sqflite
         logger.e(
-          'API fetch failed (${eggRes.statusCode}). Falling back to offline data.',
+          'API fetch failed (${eggRes.statusCode}). Status: ${eggRes.reasonPhrase}. Falling back to offline data.',
         );
-        await _loadOfflineEggCollections();
+        if (mounted) {
+          setState(() {
+            _isOfflineMode = true;
+          });
+        }
+        await _loadOfflineEggCollections(); // Fallback
       }
     } catch (e) {
-      // Offline fallback
       logger.e('Error fetching data: $e. Falling back to offline data.');
-      await _loadOfflineEggCollections();
+      if (mounted) {
+        setState(() {
+          _isOfflineMode = true;
+        });
+      }
+      await _loadOfflineEggCollections(); // Fallback
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -90,11 +127,10 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     }
   }
 
-  Future<void> _fetchFlocksAndPrepareDropdown(
-    int farmId,
-    Map<String, String> headers,
-  ) async {
-    Flock allFlocks = Flock(
+  // Helper to create the "All Flocks" object
+  Flock _createAllFlocksOption() {
+    return Flock(
+      id: null, // Use null for "All Flocks" ID
       farmId: 0,
       name: 'All Flocks',
       arrivalDate: DateTime.now().toIso8601String(),
@@ -104,6 +140,14 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
       status: 0,
       currentAgeWeeks: 0,
     );
+  }
+
+  Future<void> _fetchFlocksAndPrepareDropdown(
+    int farmId,
+    Map<String, String> headers,
+  ) async {
+    Flock allFlocks = _createAllFlocksOption();
+
     try {
       final flocksRes = await http.get(
         Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
@@ -113,31 +157,45 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
       if (flocksRes.statusCode == 200) {
         final List<dynamic> jsonList = jsonDecode(flocksRes.body);
         flocks = jsonList.map((json) => Flock.fromJson(json)).toList();
-
-        if (mounted) {
-          // Add "All Flocks" option
-          _flocksForDropdown = [allFlocks];
-          _flocksForDropdown.addAll(flocks.map((flock) => flock));
-
-          // If _selectedFlockId is not yet set (initial load), default to "All Flocks"
-          _selectedFlockId ??= null;
-        }
       } else {
         logger.e(
           'Failed to fetch flocks (${flocksRes.statusCode}): ${flocksRes.body}',
         );
-        // If flocks cannot be fetched, dropdown will only have "All Flocks"
-        if (mounted) {
-          _flocksForDropdown = [allFlocks];
-          _selectedFlockId = null;
-        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _flocksForDropdown = [allFlocks]; // Always include "All Flocks"
+          _flocksForDropdown.addAll(flocks); // Add fetched flocks
+
+          // If _selectedFlockId is not in the fetched list (e.g., deleted),
+          // or if it's the initial load, default to "All Flocks"
+          if (_selectedFlockId != null &&
+              !_flocksForDropdown.any(
+                (f) => f.id == _selectedFlockId && f.id != null,
+              )) {
+            _selectedFlockId = null;
+          } else if (_selectedFlockId == null && _flocksForDropdown.isEmpty) {
+            // Edge case: No flocks fetched and no "All Flocks" (shouldn't happen with _createAllFlocksOption)
+            _selectedFlockId = null;
+          } else {
+            _selectedFlockId ??=
+                null; // If not set, default to null ("All Flocks")
+          }
+        });
       }
     } catch (e) {
       logger.e('Error fetching flocks: $e');
       if (mounted) {
-        _flocksForDropdown = [allFlocks];
-        _selectedFlockId = null;
+        setState(() {
+          _flocksForDropdown = [allFlocks]; // Only "All Flocks" on error
+          _selectedFlockId = null;
+        });
       }
+      SystemUtils.showSnackBar(
+        context,
+        'Could not load flocks. Showing all flocks by default.',
+      );
     }
   }
 
@@ -173,18 +231,34 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
       }
 
       if (mounted) {
-        _eggCollections = offlineCollections;
+        setState(() {
+          _eggCollections = offlineCollections;
+          _isOfflineMode = true; // Confirm offline mode is active
+        });
       }
     } catch (e) {
       logger.e('Error loading offline egg collections: $e');
       if (mounted) {
-        _eggCollections = []; // Clear data if offline load fails
+        setState(() {
+          _eggCollections = []; // Clear data if offline load fails
+          _isOfflineMode = true;
+        });
+        SystemUtils.showSnackBar(
+          context,
+          'Failed to load offline data. Please check connection.',
+        );
       }
     }
   }
 
   void _onRouteSelected(String route, [Map<String, dynamic>? args]) {
-    Navigator.pushNamed(context, route, arguments: args); // Support arguments
+    // Check if the current route is already the target route to prevent pushing duplicates
+    // Also, ensure we pop the drawer after selection
+    if (ModalRoute.of(context)?.settings.name != route) {
+      Navigator.pushNamed(context, route, arguments: args);
+    } else {
+      Navigator.pop(context); // Just close the drawer if on the same page
+    }
   }
 
   @override
@@ -197,92 +271,152 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
             {'collection': entry}, // Pass selected collection
           ),
     );
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Egg Collections')),
+      appBar: AppBar(
+        title: const Text(
+          'Egg Collections',
+          style: TextStyle(color: Colors.white), // AppBar title text color
+        ),
+        backgroundColor: Constants.kPrimaryColor, // Primary color for AppBar
+        iconTheme: const IconThemeData(color: Colors.white), // Icons in AppBar
+      ),
       drawer: AppNavigationDrawer(
         selectedRoute: EggCollectionListScreen.routeName,
         onRouteSelected: _onRouteSelected,
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Column(
-                children: [
-                  _buildFilterOptions(),
-                  Expanded(
-                    child:
-                        _eggCollections.isEmpty
-                            ? const Center(
-                              child: Text(
-                                'No egg collections found for the selected filters.',
-                              ),
-                            )
-                            : SingleChildScrollView(
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  minWidth: MediaQuery.of(context).size.width,
-                                ),
-                                child: PaginatedDataTable(
-                                  showCheckboxColumn: false,
-                                  columns: const [
-                                    DataColumn(
-                                      label: Text(
-                                        'Flock',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    DataColumn(
-                                      label: Text(
-                                        'Date',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    DataColumn(
-                                      label: Text(
-                                        'Whole Eggs',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    DataColumn(
-                                      label: Text(
-                                        'Broken Eggs',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    DataColumn(
-                                      label: Text(
-                                        'Total',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                  source: dataSource,
-                                  rowsPerPage: _rowsPerPage,
-                                  columnSpacing: 16,
-                                  horizontalMargin: 16,
-                                ),
-                              ),
-                            ),
-                  ),
-                ],
-              ),
+      body: RefreshIndicator(
+        // Add RefreshIndicator for pull-to-refresh
+        onRefresh: _fetchData,
+        color: Constants.kPrimaryColor, // Color of the refresh indicator
+        child:
+            _isLoading
+                ? _buildLoadingState() // Use helper for loading
+                : Column(
+                  children: [
+                    _buildFilterOptions(),
+                    if (_isOfflineMode)
+                      _buildOfflineModeBanner(), // Show offline mode banner
+                    Expanded(
+                      child:
+                          _eggCollections.isEmpty
+                              ? _buildNoDataState() // Use helper for no data
+                              : _buildDataTable(
+                                dataSource,
+                              ), // Use helper for table
+                    ),
+                  ],
+                ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed:
             _flocksForDropdown.isEmpty
                 ? null // Disable if no flocks are loaded (even "All")
                 : () => _onRouteSelected(EggCollectionScreen.routeName),
         tooltip: 'Add Egg Collection',
+        backgroundColor: Constants.kPrimaryColor, // Primary color for FAB
+        foregroundColor: Colors.white, // Icon color for FAB
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  // Helper Widget for Loading State
+  Widget _buildLoadingState() {
+    return Center(
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(Constants.kPrimaryColor),
+      ),
+    );
+  }
+
+  // Helper Widget for No Data State
+  Widget _buildNoDataState() {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text(
+          'No egg collections found for the selected filters. Please add a new entry.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16, color: Colors.black54),
+        ),
+      ),
+    );
+  }
+
+  // Helper Widget for Offline Mode Banner
+  Widget _buildOfflineModeBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      color: Colors.orange.shade100, // Light orange background
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off, color: Colors.orange.shade700, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Showing offline data. Connect to update.',
+              style: TextStyle(color: Colors.orange.shade700, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDataTable(EggCollectionDataSource dataSource) {
+    return SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth:
+              MediaQuery.of(
+                context,
+              ).size.width, // Ensure table takes full width if needed
+        ),
+        child: PaginatedDataTable(
+          showCheckboxColumn: false,
+          columns: const [
+            DataColumn(
+              label: Text(
+                'Flock',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Date',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Whole Eggs',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Broken Eggs',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Total',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+          source: dataSource,
+          rowsPerPage: _rowsPerPage,
+          columnSpacing: 24,
+          horizontalMargin: 16,
+          // Removed page-navigation-related widgets to keep it cleaner if not needed
+          // header: const Text('Egg Collections'), // You can add a header here
+          // onPageChanged: (int page) => print('Page changed to $page'),
+          // onSelectAll: (bool? selected) {},
+        ),
       ),
     );
   }
@@ -294,13 +428,20 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
         children: [
           Expanded(
             child: DropdownButtonFormField<int?>(
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
                 labelText: 'Select Flock',
-                contentPadding: EdgeInsets.symmetric(
+                contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
                 ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: Constants.kPrimaryColor,
+                    width: 2.0,
+                  ),
+                ),
+                labelStyle: TextStyle(color: Constants.kPrimaryColor),
               ),
               value: _selectedFlockId,
               items:
@@ -315,7 +456,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
                   setState(() {
                     _selectedFlockId = newValue;
                   });
-                  _fetchData(); // Re-fetch data with new flock filter
+                  _fetchData();
                 }
               },
               isExpanded: true,
@@ -324,13 +465,20 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: DropdownButtonFormField<String>(
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
                 labelText: 'Select Month',
-                contentPadding: EdgeInsets.symmetric(
+                contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
                 ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: Constants.kPrimaryColor,
+                    width: 2.0,
+                  ),
+                ),
+                labelStyle: TextStyle(color: Constants.kPrimaryColor),
               ),
               value: _selectedMonth,
               items:
@@ -345,7 +493,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
                   setState(() {
                     _selectedMonth = newValue;
                   });
-                  _fetchData(); // Re-fetch data with new month filter
+                  _fetchData();
                 }
               },
               isExpanded: true,
