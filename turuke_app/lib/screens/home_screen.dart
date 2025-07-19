@@ -19,7 +19,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Define a primary color for consistency
   static const Color _primaryColor = Color.fromARGB(255, 103, 2, 121);
   static const Color _secondaryColor = Color.fromARGB(255, 150, 50, 170);
 
