@@ -6,7 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:turuke_app/constants.dart'; // Ensure this is imported for your colors
+import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/datasources/egg_collection_datasource.dart';
 import 'package:turuke_app/models/egg_data.dart';
 import 'package:turuke_app/models/flock.dart';
@@ -29,7 +29,7 @@ class EggCollectionListScreen extends StatefulWidget {
 
 class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
   bool _isLoading = true;
-  bool _isOfflineMode = false; // New state to indicate offline data display
+  bool _isOfflineMode = false;
   final int _rowsPerPage = 10;
 
   List<EggData> _eggCollections = [];
@@ -44,17 +44,16 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     _fetchData();
   }
 
-  // Refactored to separate online and offline logic more clearly
   Future<void> _fetchData() async {
-    if (!mounted) return; // Ensure widget is mounted before setState
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
-      _isOfflineMode = false; // Reset offline mode on new fetch attempt
+      _isOfflineMode = false;
     });
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
-    final farmId = authProvider.user?.farmId; // Use null-safe access
+    final farmId = authProvider.user?.farmId;
 
     if (farmId == null) {
       logger.e('Farm ID is null. Cannot fetch data.');
@@ -62,9 +61,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
         setState(() {
           _isLoading = false;
           _eggCollections = [];
-          _flocksForDropdown = [
-            _createAllFlocksOption(),
-          ]; // Ensure dropdown is not empty
+          _flocksForDropdown = [_createAllFlocksOption()];
         });
       }
       SystemUtils.showSnackBar(
@@ -75,10 +72,8 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     }
 
     try {
-      // Always attempt to fetch flocks first
       await _fetchFlocksAndPrepareDropdown(farmId, headers);
 
-      // Construct URL for egg production
       String eggProductionUrl =
           '${Constants.LAYERS_API_BASE_URL}/egg-production?farm_id=$farmId';
       if (_selectedFlockId != null) {
@@ -102,7 +97,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
           });
         }
       } else {
-        logger.e(
+        logger.w(
           'API fetch failed (${eggRes.statusCode}). Status: ${eggRes.reasonPhrase}. Falling back to offline data.',
         );
         if (mounted) {
@@ -110,7 +105,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
             _isOfflineMode = true;
           });
         }
-        await _loadOfflineEggCollections(); // Fallback
+        await _loadOfflineEggCollections();
       }
     } catch (e) {
       logger.e('Error fetching data: $e. Falling back to offline data.');
@@ -119,7 +114,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
           _isOfflineMode = true;
         });
       }
-      await _loadOfflineEggCollections(); // Fallback
+      await _loadOfflineEggCollections();
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -127,10 +122,9 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     }
   }
 
-  // Helper to create the "All Flocks" object
   Flock _createAllFlocksOption() {
     return Flock(
-      id: null, // Use null for "All Flocks" ID
+      id: null,
       farmId: 0,
       name: 'All Flocks',
       arrivalDate: DateTime.now().toIso8601String(),
@@ -158,29 +152,23 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
         final List<dynamic> jsonList = jsonDecode(flocksRes.body);
         flocks = jsonList.map((json) => Flock.fromJson(json)).toList();
       } else {
-        logger.e(
+        logger.w(
           'Failed to fetch flocks (${flocksRes.statusCode}): ${flocksRes.body}',
         );
       }
 
       if (mounted) {
         setState(() {
-          _flocksForDropdown = [allFlocks]; // Always include "All Flocks"
-          _flocksForDropdown.addAll(flocks); // Add fetched flocks
+          _flocksForDropdown = [allFlocks];
+          _flocksForDropdown.addAll(flocks);
 
-          // If _selectedFlockId is not in the fetched list (e.g., deleted),
-          // or if it's the initial load, default to "All Flocks"
           if (_selectedFlockId != null &&
               !_flocksForDropdown.any(
                 (f) => f.id == _selectedFlockId && f.id != null,
               )) {
             _selectedFlockId = null;
-          } else if (_selectedFlockId == null && _flocksForDropdown.isEmpty) {
-            // Edge case: No flocks fetched and no "All Flocks" (shouldn't happen with _createAllFlocksOption)
-            _selectedFlockId = null;
           } else {
-            _selectedFlockId ??=
-                null; // If not set, default to null ("All Flocks")
+            _selectedFlockId ??= null;
           }
         });
       }
@@ -188,7 +176,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
       logger.e('Error fetching flocks: $e');
       if (mounted) {
         setState(() {
-          _flocksForDropdown = [allFlocks]; // Only "All Flocks" on error
+          _flocksForDropdown = [allFlocks];
           _selectedFlockId = null;
         });
       }
@@ -215,7 +203,6 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
 
       List<EggData> offlineCollections = [...syncedEggData, ...pendingEggData];
 
-      // Apply in-memory filtering if offline and filters are set
       if (_selectedFlockId != null) {
         offlineCollections =
             offlineCollections
@@ -233,16 +220,14 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
       if (mounted) {
         setState(() {
           _eggCollections = offlineCollections;
-          _isOfflineMode = true; // Confirm offline mode is active
+          _isOfflineMode = true;
         });
       }
     } catch (e) {
       logger.e('Error loading offline egg collections: $e');
       if (mounted) {
-        setState(() {
-          _eggCollections = []; // Clear data if offline load fails
-          _isOfflineMode = true;
-        });
+        _eggCollections = [];
+        _isOfflineMode = true;
         SystemUtils.showSnackBar(
           context,
           'Failed to load offline data. Please check connection.',
@@ -251,11 +236,17 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     }
   }
 
-  void _onRouteSelected(String route, [Map<String, dynamic>? args]) {
+  // Modified _onRouteSelected to directly accept EggData
+  void _onRouteSelected(String route, [Object? args]) async {
     // Check if the current route is already the target route to prevent pushing duplicates
-    // Also, ensure we pop the drawer after selection
     if (ModalRoute.of(context)?.settings.name != route) {
-      Navigator.pushNamed(context, route, arguments: args);
+      // Use await to wait for the EggCollectionScreen to return
+      final result = await Navigator.pushNamed(context, route, arguments: args);
+      // If the EggCollectionScreen signals a save/update, refresh the list
+      if (result == true) {
+        // Assuming EggCollectionScreen returns 'true' on successful save
+        _fetchData();
+      }
     } else {
       Navigator.pop(context); // Just close the drawer if on the same page
     }
@@ -263,47 +254,41 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Pass EggData directly as argument to _onRouteSelected
     final dataSource = EggCollectionDataSource(
       eggCollections: _eggCollections,
       onSelect:
-          (entry) => _onRouteSelected(
-            EggCollectionScreen.routeName,
-            {'collection': entry}, // Pass selected collection
-          ),
+          (entry) => _onRouteSelected(EggCollectionScreen.routeName, entry),
     );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Egg Collections',
-          style: TextStyle(color: Colors.white), // AppBar title text color
+          style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: Constants.kPrimaryColor, // Primary color for AppBar
-        iconTheme: const IconThemeData(color: Colors.white), // Icons in AppBar
+        backgroundColor: Constants.kPrimaryColor,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       drawer: AppNavigationDrawer(
         selectedRoute: EggCollectionListScreen.routeName,
         onRouteSelected: _onRouteSelected,
       ),
       body: RefreshIndicator(
-        // Add RefreshIndicator for pull-to-refresh
         onRefresh: _fetchData,
-        color: Constants.kPrimaryColor, // Color of the refresh indicator
+        color: Constants.kPrimaryColor,
         child:
             _isLoading
-                ? _buildLoadingState() // Use helper for loading
+                ? _buildLoadingState()
                 : Column(
                   children: [
                     _buildFilterOptions(),
-                    if (_isOfflineMode)
-                      _buildOfflineModeBanner(), // Show offline mode banner
+                    if (_isOfflineMode) _buildOfflineModeBanner(),
                     Expanded(
                       child:
                           _eggCollections.isEmpty
-                              ? _buildNoDataState() // Use helper for no data
-                              : _buildDataTable(
-                                dataSource,
-                              ), // Use helper for table
+                              ? _buildNoDataState()
+                              : _buildDataTable(dataSource),
                     ),
                   ],
                 ),
@@ -311,17 +296,18 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed:
             _flocksForDropdown.isEmpty
-                ? null // Disable if no flocks are loaded (even "All")
-                : () => _onRouteSelected(EggCollectionScreen.routeName),
+                ? null
+                : () => _onRouteSelected(
+                  EggCollectionScreen.routeName,
+                ), // No argument for new entry
         tooltip: 'Add Egg Collection',
-        backgroundColor: Constants.kPrimaryColor, // Primary color for FAB
-        foregroundColor: Colors.white, // Icon color for FAB
+        backgroundColor: Constants.kPrimaryColor,
+        foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  // Helper Widget for Loading State
   Widget _buildLoadingState() {
     return Center(
       child: CircularProgressIndicator(
@@ -330,13 +316,12 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     );
   }
 
-  // Helper Widget for No Data State
   Widget _buildNoDataState() {
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(16.0),
         child: Text(
-          'No egg collections found for the selected filters. Please add a new entry.',
+          'No egg collections found for the selected filters. Pull down to refresh or add a new entry.',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 16, color: Colors.black54),
         ),
@@ -344,12 +329,11 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     );
   }
 
-  // Helper Widget for Offline Mode Banner
   Widget _buildOfflineModeBanner() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      color: Colors.orange.shade100, // Light orange background
+      color: Colors.orange.shade100,
       child: Row(
         children: [
           Icon(Icons.cloud_off, color: Colors.orange.shade700, size: 20),
@@ -369,10 +353,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     return SingleChildScrollView(
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          minWidth:
-              MediaQuery.of(
-                context,
-              ).size.width, // Ensure table takes full width if needed
+          minWidth: MediaQuery.of(context).size.width,
         ),
         child: PaginatedDataTable(
           showCheckboxColumn: false,
@@ -412,10 +393,6 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
           rowsPerPage: _rowsPerPage,
           columnSpacing: 24,
           horizontalMargin: 16,
-          // Removed page-navigation-related widgets to keep it cleaner if not needed
-          // header: const Text('Egg Collections'), // You can add a header here
-          // onPageChanged: (int page) => print('Page changed to $page'),
-          // onSelectAll: (bool? selected) {},
         ),
       ),
     );

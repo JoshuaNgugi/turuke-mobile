@@ -3,7 +3,7 @@ import 'package:turuke_app/models/egg_data.dart';
 import 'package:turuke_app/utils/string_utils.dart';
 
 class EggCollectionDataSource extends DataTableSource {
-  final List<EggData> _eggCollections;
+  List<EggData> _eggCollections;
   final Function(EggData)? onSelect;
 
   EggCollectionDataSource({
@@ -11,21 +11,27 @@ class EggCollectionDataSource extends DataTableSource {
     this.onSelect,
   }) : _eggCollections = eggCollections;
 
+  void updateEggCollections(List<EggData> newEggCollections) {
+    _eggCollections = newEggCollections;
+    notifyListeners();
+  }
+
   @override
   DataRow? getRow(int index) {
     if (index >= _eggCollections.length) return null;
     final eggData = _eggCollections[index];
+
     return DataRow(
       onSelectChanged: (selected) {
         if (selected == true && onSelect != null) {
-          onSelect!(eggData); // Trigger onSelect when row is tapped
+          onSelect!(eggData);
         }
       },
       cells: [
-        DataCell(Text('${eggData.flockName ?? 0}')),
+        DataCell(Text(eggData.flockName)),
         DataCell(Text(StringUtils.formatDateDisplay(eggData.collectionDate))),
-        DataCell(Text('${eggData.wholeEggs ?? 0}')),
-        DataCell(Text('${eggData.brokenEggs ?? 0}')),
+        DataCell(Text('${eggData.wholeEggs}')),
+        DataCell(Text('${eggData.brokenEggs}')),
         DataCell(Text('${eggData.totalEggs}')),
       ],
     );
