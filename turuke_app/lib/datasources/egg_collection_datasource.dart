@@ -23,7 +23,7 @@ class EggCollectionDataSource extends DataTableSource {
       },
       cells: [
         DataCell(Text('${eggData.flockName ?? 0}')), // TODO: change to name
-        DataCell(Text(StringUtils.formatDate(eggData.collectionDate))),
+        DataCell(Text(StringUtils.formatDateDisplay(eggData.collectionDate))),
         DataCell(Text('${eggData.wholeEggs ?? 0}')),
         DataCell(Text('${eggData.brokenEggs ?? 0}')),
         DataCell(Text('${eggData.totalEggs}')),

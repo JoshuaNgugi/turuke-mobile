@@ -24,7 +24,7 @@ class Disease {
       id: json['id'],
       flockId: json['flock_id'],
       name: json['disease_name'],
-      diagnosisDate: StringUtils.formatDate(json['diagnosis_date']),
+      diagnosisDate: StringUtils.formatDateDisplay(json['diagnosis_date']),
       affectedCount: json['affected_count'],
       notes: json['notes'],
       flockName: json['flock_name'],

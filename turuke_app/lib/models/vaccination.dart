@@ -22,7 +22,7 @@ class Vaccination {
       id: json['id'],
       flockId: json['flock_id'],
       name: json['vaccine_name'],
-      vaccinationDate: StringUtils.formatDate(json['vaccination_date']),
+      vaccinationDate: StringUtils.formatDateDisplay(json['vaccination_date']),
       notes: json['notes'],
       flockName: json['flock_name'],
     );

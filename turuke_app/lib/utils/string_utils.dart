@@ -1,7 +1,7 @@
 import 'package:intl/intl.dart';
 
 class StringUtils {
-  static String formatDate(String? isoDate) {
+  static String formatDateDisplay(String? isoDate) {
     if (isoDate == null || isoDate.isEmpty) return '';
     try {
       final dateTime = DateTime.parse(isoDate);

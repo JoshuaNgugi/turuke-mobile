@@ -252,7 +252,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                 itemCount: _vaccinations.length,
                 itemBuilder: (context, index) {
                   final vaccination = _vaccinations[index];
-                  final vaccinationDate = StringUtils.formatDate(
+                  final vaccinationDate = StringUtils.formatDateDisplay(
                     vaccination.vaccinationDate,
                   );
                   return ListTile(

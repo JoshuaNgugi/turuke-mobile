@@ -29,7 +29,7 @@ class Mortality {
     return Mortality(
       id: json['id'],
       flockId: json['flock_id'],
-      recordedDate: StringUtils.formatDate(json['death_date']),
+      recordedDate: StringUtils.formatDateDisplay(json['death_date']),
       count: json['count'],
       cause: json['cause'],
       flockName: json['flock_name'],

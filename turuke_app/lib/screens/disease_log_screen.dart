@@ -285,7 +285,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                 itemCount: _diseases.length,
                 itemBuilder: (context, index) {
                   final disease = _diseases[index];
-                  final diagnosisDate = StringUtils.formatDate(
+                  final diagnosisDate = StringUtils.formatDateDisplay(
                     disease.diagnosisDate,
                   );
                   return ListTile(

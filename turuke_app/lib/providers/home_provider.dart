@@ -190,7 +190,7 @@ class HomeProvider with ChangeNotifier {
               flockId: flock.id ?? 0,
               flockName: flock.name,
               eggPercentage: percentage,
-              collectionDate: StringUtils.formatDate(eggData.collectionDate),
+              collectionDate: StringUtils.formatDateDisplay(eggData.collectionDate),
               flockAge: flock.currentAgeWeeks,
             );
           }).toList();

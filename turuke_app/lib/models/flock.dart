@@ -28,7 +28,7 @@ class Flock {
       id: json['id'],
       farmId: json['farm_id'],
       name: json['breed'], // TODO: change to name
-      arrivalDate: StringUtils.formatDate(json['arrival_date']),
+      arrivalDate: StringUtils.formatDateDisplay(json['arrival_date']),
       initialCount: json['initial_count'],
       currentCount: json['current_count'],
       ageWeeks: json['current_age_weeks'] ?? json['age_weeks'] ?? 0,

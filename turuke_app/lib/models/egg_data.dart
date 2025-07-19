@@ -32,7 +32,7 @@ class EggData {
     return EggData(
       id: json['id'],
       flockId: json['flock_id'],
-      collectionDate: StringUtils.formatDate(json['collection_date']),
+      collectionDate: StringUtils.formatDateDisplay(json['collection_date']),
       wholeEggs: json['whole_eggs'],
       brokenEggs: json['broken_eggs'],
       flockName: json['breed'],
