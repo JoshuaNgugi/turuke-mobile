@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -9,7 +11,11 @@ import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer_screen.dart';
+import 'package:turuke_app/utils/string_utils.dart';
+import 'package:turuke_app/utils/system_utils.dart';
 import 'package:uuid/uuid.dart';
+
+var logger = Logger(printer: PrettyPrinter());
 
 class FlockManagementScreen extends StatefulWidget {
   static const String routeName = '/flock-management';
@@ -22,56 +28,69 @@ class FlockManagementScreen extends StatefulWidget {
 
 class _FlockManagementScreenState extends State<FlockManagementScreen> {
   List<Flock> _flocks = [];
-  Database? _db;
   bool _isLoading = true;
-  final _flockNameController = TextEditingController();
-  final _initialCountController = TextEditingController();
-  final _currentCountController = TextEditingController();
+  final DateFormat _dateFormat = DateFormat('d MMMM, y');
 
   @override
   void initState() {
     super.initState();
-    _initDb();
-    _fetchFlocks();
+    _initializeData();
   }
 
   @override
   void dispose() {
-    _flockNameController.dispose();
-    _initialCountController.dispose();
-    _currentCountController.dispose();
     super.dispose();
   }
 
-  Future<void> _initDb() async {
-    _db = await openDatabase(
-      path.join(await getDatabasesPath(), 'turuke.db'),
-      onCreate:
-          (db, version) => db.execute(
-            'CREATE TABLE flock_pending(id TEXT PRIMARY KEY, farm_id INTEGER, breed TEXT, arrival_date TEXT, initial_count INTEGER, age_weeks INTEGER, status TEXT)',
-          ),
-      version: 1,
-    );
+  Future<void> _initializeData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    await _fetchFlocks();
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _fetchFlocks() async {
+    if (!mounted) return;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final farmId = authProvider.user?.farmId;
+
+    if (farmId == null) {
+      logger.e('Farm ID is null. Cannot fetch flocks.');
+      if (mounted) {
+        SystemUtils.showSnackBar(
+          context,
+          'Farm ID not available. Cannot load flocks.',
+        );
+      }
+      return;
+    }
+
     try {
       final response = await http.get(
-        Uri.parse(
-          '${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=${authProvider.user!.farmId}',
-        ),
+        Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: await authProvider.getHeaders(),
       );
-      if (response.statusCode == 200) {
-        setState(() {
+      if (mounted) {
+        if (response.statusCode == 200) {
           final List<dynamic> jsonList = jsonDecode(response.body);
-          _flocks = jsonList.map((json) => Flock.fromJson(json)).toList();
-          _isLoading = false;
-        });
+          List<Flock> fetchedFlocks =
+              jsonList.map((json) => Flock.fromJson(json)).toList();
+
+          setState(() {
+            _flocks = fetchedFlocks;
+          });
+        } else {
+          logger.w('Failed to fetch flocks (${response.statusCode}).');
+        }
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      logger.e('Error fetching flocks: $e.');
+      if (mounted) {
+        SystemUtils.showSnackBar(context, 'Failed to fetch flocks.');
+      }
     }
   }
 
@@ -79,166 +98,368 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
     Navigator.pushNamed(context, route);
   }
 
-  Future<void> _showAddFlockDialog(Flock? flock) async {
+  Future<void> _showAddEditFlockDialog({Flock? flockToEdit}) async {
     final formKey = GlobalKey<FormState>();
-    String breed = '';
-    int initialCount = 0, currentCount = 0;
-    int status = 1;
+    String _breed = flockToEdit?.name ?? '';
+    int _initialCount = flockToEdit?.initialCount ?? 0;
+    int _currentCount = flockToEdit?.currentCount ?? 0;
+    DateTime _arrivalDate =
+        flockToEdit != null
+            ? _dateFormat.parse(flockToEdit.arrivalDate)
+            : DateTime.now();
+    int _status = flockToEdit?.status ?? 1;
 
-    if (flock != null) {
-      _flockNameController.text = flock.name;
-      _initialCountController.text = flock.initialCount.toString();
-      _currentCountController.text = flock.currentCount.toString();
-    } else {
-      _flockNameController.clear();
-      _initialCountController.clear();
-      _currentCountController.clear();
-    }
+    // Local controllers for the dialog, disposed when dialog is closed
+    final TextEditingController breedController = TextEditingController(
+      text: _breed,
+    );
+    final TextEditingController initialCountController = TextEditingController(
+      text: _initialCount.toString(),
+    );
+    final TextEditingController currentCountController = TextEditingController(
+      text: _currentCount.toString(),
+    );
 
-    DateTime arrivalDate =
-        flock != null ? DateTime.parse(flock.arrivalDate) : DateTime.now();
-
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDialog<bool>(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: const Text('Add Flock'),
-            content: Form(
-              key: formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: _flockNameController,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      validator: (value) => value!.isEmpty ? 'Required' : null,
-                      onChanged: (value) => breed = value,
+          (context) => StatefulBuilder(
+            builder: (BuildContext context, StateSetter setStateInDialog) {
+              return AlertDialog(
+                title: Text(flockToEdit != null ? 'Edit Flock' : 'Add Flock'),
+                content: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextFormField(
+                          controller: breedController,
+                          decoration: _inputDecoration('Name'),
+                          validator:
+                              (value) =>
+                                  value!.isEmpty ? 'Name is required' : null,
+                          onChanged: (value) => _breed = value,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          decoration: _inputDecoration('Arrival Date'),
+                          readOnly: true,
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: _arrivalDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now(),
+                              builder: (context, child) {
+                                return Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: ColorScheme.light(
+                                      primary: Constants.kPrimaryColor,
+                                      onPrimary: Colors.white,
+                                      onSurface: Colors.black87,
+                                    ),
+                                    textButtonTheme: TextButtonThemeData(
+                                      style: TextButton.styleFrom(
+                                        foregroundColor:
+                                            Constants.kPrimaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            if (picked != null) {
+                              setStateInDialog(() {
+                                _arrivalDate = picked;
+                              });
+                            }
+                          },
+                          controller: TextEditingController(
+                            text: _dateFormat.format(_arrivalDate),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: initialCountController,
+                          decoration: _inputDecoration('Initial Count'),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Required';
+                            }
+                            if (int.tryParse(value) == null ||
+                                int.parse(value)! < 0) {
+                              return 'Enter valid number';
+                            }
+                            return null;
+                          },
+                          onChanged:
+                              (value) =>
+                                  _initialCount = int.tryParse(value) ?? 0,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: currentCountController,
+                          decoration: _inputDecoration('Current Count'),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Required';
+                            }
+                            if (int.tryParse(value) == null ||
+                                int.parse(value) < 0) {
+                              return 'Enter valid number';
+                            }
+                            return null;
+                          },
+                          onChanged:
+                              (value) =>
+                                  _currentCount = int.tryParse(value) ?? 0,
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<int>(
+                          decoration: _inputDecoration('Status'),
+                          value: _status,
+                          items: const [
+                            DropdownMenuItem(value: 1, child: Text('Active')),
+                            DropdownMenuItem(value: 0, child: Text('Inactive')),
+                          ],
+                          onChanged: (newValue) {
+                            if (newValue != null) {
+                              setStateInDialog(() {
+                                _status = newValue;
+                              });
+                            }
+                          },
+                        ),
+                      ],
                     ),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Arrival Date',
-                      ),
-                      readOnly: true,
-                      controller: TextEditingController(
-                        text: arrivalDate.toIso8601String().substring(0, 10),
-                      ),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: arrivalDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now(),
-                        );
-                        if (picked != null) {
-                          arrivalDate = picked;
-                          (context as Element).markNeedsBuild();
-                        }
-                      },
-                    ),
-                    TextFormField(
-                      controller: _initialCountController,
-                      decoration: const InputDecoration(
-                        labelText: 'Initial Count',
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (value) => value!.isEmpty ? 'Required' : null,
-                      onChanged:
-                          (value) => initialCount = int.tryParse(value) ?? 0,
-                    ),
-                    TextFormField(
-                      controller: _currentCountController,
-                      decoration: const InputDecoration(
-                        labelText: 'Current Count',
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (value) => value!.isEmpty ? 'Required' : null,
-                      onChanged:
-                          (value) => currentCount = int.tryParse(value) ?? 0,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (formKey.currentState!.validate()) {
-                    Navigator.pop(context, {
-                      'breed': breed,
-                      'arrival_date': arrivalDate.toIso8601String().substring(
-                        0,
-                        10,
-                      ),
-                      'initial_count': initialCount,
-                      'current_count': currentCount,
-                      'status': status,
-                    });
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
+                actions: [
+                  TextButton(
+                    onPressed:
+                        () => Navigator.pop(
+                          context,
+                          false,
+                        ), // Return false on cancel
+                    style: TextButton.styleFrom(
+                      foregroundColor: Constants.kPrimaryColor,
+                    ),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (formKey.currentState!.validate()) {
+                        // Return true to indicate save success
+                        Navigator.pop(context, true);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Constants.kPrimaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Save'),
+                  ),
+                ],
+              );
+            },
           ),
     );
 
-    if (result != null) {
+    breedController.dispose();
+    initialCountController.dispose();
+    currentCountController.dispose();
+
+    if (result == true) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final data = {'farm_id': authProvider.user!.farmId, ...result};
-      try {
-        final response = await http.post(
-          Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks'),
-          headers: await authProvider.getHeaders(),
-          body: jsonEncode(data),
+      final farmId = authProvider.user?.farmId;
+
+      if (farmId == null) {
+        SystemUtils.showSnackBar(
+          context,
+          'Farm ID not available. Cannot save.',
         );
-        if (response.statusCode == 201) {
-          _fetchFlocks();
+        return;
+      }
+
+      final data = {
+        'farm_id': farmId,
+        'name': _breed,
+        'arrivalDate': _dateFormat.format(_arrivalDate),
+        'initialCount': _initialCount,
+        'currentCount': _currentCount,
+        'ageWeeks': 0,
+        'status': _status,
+      };
+
+      try {
+        http.Response response;
+        if (flockToEdit != null) {
+          // Update existing flock
+          response = await http.patch(
+            Uri.parse(
+              '${Constants.LAYERS_API_BASE_URL}/flocks/${flockToEdit.id}',
+            ),
+            headers: await authProvider.getHeaders(),
+            body: jsonEncode(data),
+          );
+          if (response.statusCode == 200) {
+            SystemUtils.showSnackBar(context, 'Flock updated successfully!');
+            await _fetchFlocks();
+          } else {
+            throw Exception('Failed to update flock: ${response.body}');
+          }
         } else {
-          throw Exception('Failed to save');
+          // Add new flock
+          response = await http.post(
+            Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks'),
+            headers: await authProvider.getHeaders(),
+            body: jsonEncode(data),
+          );
+          if (response.statusCode == 201) {
+            SystemUtils.showSnackBar(context, 'Flock added successfully!');
+            await _fetchFlocks();
+          } else {
+            throw Exception('Failed to add flock: ${response.body}');
+          }
         }
       } catch (e) {
-        await _db!.insert('flock_pending', {'id': const Uuid().v4(), ...data});
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Saved offline, will sync later')),
-        );
-        _fetchFlocks();
+        logger.e('Error saving/updating flock online: $e.');
       }
     }
+  }
+
+  InputDecoration _inputDecoration(String labelText) {
+    return InputDecoration(
+      labelText: labelText,
+      border: const OutlineInputBorder(),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Constants.kPrimaryColor, width: 2.0),
+      ),
+      labelStyle: TextStyle(color: Constants.kPrimaryColor),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Flock Management')),
+      appBar: AppBar(
+        title: const Text(
+          'Flock Management',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Constants.kPrimaryColor,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
       drawer: AppNavigationDrawer(
         selectedRoute: FlockManagementScreen.routeName,
         onRouteSelected: _onRouteSelected,
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                padding: EdgeInsets.all(16.0),
-                itemCount: _flocks.length,
-                itemBuilder: (context, index) {
-                  Flock flock = _flocks[index];
-                  return ListTile(
-                    leading: Icon(Icons.pets),
-                    title: Text(flock.name),
-                    subtitle: Text(
-                      'Count: ${flock.currentCount}, Age: ${flock.ageWeeks} weeks',
+      body: RefreshIndicator(
+        onRefresh: _fetchFlocks,
+        color: Constants.kPrimaryColor,
+        child:
+            _isLoading
+                ? Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Constants.kPrimaryColor,
                     ),
-                    onTap: () => _showAddFlockDialog(flock),
-                  );
-                },
-              ),
+                  ),
+                )
+                : Column(
+                  children: [
+                    Expanded(
+                      child:
+                          _flocks.isEmpty
+                              ? const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: Text(
+                                    'No flocks found. Tap the + button to add one.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              : ListView.builder(
+                                padding: const EdgeInsets.all(8.0),
+                                itemCount: _flocks.length,
+                                itemBuilder: (context, index) {
+                                  Flock flock = _flocks[index];
+                                  return Card(
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 8.0,
+                                      horizontal: 4.0,
+                                    ),
+                                    elevation: 2,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: ListTile(
+                                      leading: CircleAvatar(
+                                        backgroundColor: Constants.kAccentColor,
+                                        child: Icon(
+                                          Icons.pets,
+                                          color: Constants.kPrimaryColor,
+                                        ),
+                                      ),
+                                      title: Text(
+                                        flock.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Arrival: ${StringUtils.formatDateDisplay(flock.arrivalDate)}',
+                                          ),
+                                          Text(
+                                            'Initial: ${flock.initialCount}, Current: ${flock.currentCount}',
+                                          ),
+                                          Text('Age: ${flock.ageWeeks} weeks'),
+                                          Text(
+                                            'Status: ${flock.status == 1 ? 'Active' : 'Inactive'}',
+                                            style: TextStyle(
+                                              color:
+                                                  flock.status == 1
+                                                      ? Colors.green
+                                                      : Colors.red,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      trailing: const Icon(
+                                        Icons.edit,
+                                        color: Colors.grey,
+                                      ),
+                                      onTap:
+                                          () => _showAddEditFlockDialog(
+                                            flockToEdit: flock,
+                                          ),
+                                    ),
+                                  );
+                                },
+                              ),
+                    ),
+                  ],
+                ),
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddFlockDialog(null),
-        child: Icon(Icons.add),
+        onPressed: () => _showAddEditFlockDialog(flockToEdit: null),
+        backgroundColor: Constants.kPrimaryColor,
+        foregroundColor: Colors.white,
+        tooltip: 'Add New Flock',
+        child: const Icon(Icons.add),
       ),
     );
   }
