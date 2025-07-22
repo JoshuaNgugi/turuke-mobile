@@ -109,7 +109,6 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
             : DateTime.now();
     int _status = flockToEdit?.status ?? 1;
 
-    // Local controllers for the dialog, disposed when dialog is closed
     final TextEditingController breedController = TextEditingController(
       text: _breed,
     );
@@ -170,7 +169,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                                 );
                               },
                             );
-                            if (picked != null) {
+                            if (picked != null && context.mounted) {
                               setStateInDialog(() {
                                 _arrivalDate = picked;
                               });

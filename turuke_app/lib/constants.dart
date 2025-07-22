@@ -1,5 +1,9 @@
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+
 class Constants {
-  static const String API_BASE_URL = 'http://192.168.90.34:3000/api';
+  static const String API_BASE_URL = 'http://localhost:3000/api';
 
   static const String LAYERS_API_BASE_URL =
       '$API_BASE_URL/animals/chicken/layers';
@@ -7,6 +11,12 @@ class Constants {
   static const String USERS_API_BASE_URL = '$API_BASE_URL/users';
 
   static const String TERMS_OF_SERVICE_URL = 'https://www.turuke.co.ke/terms';
+
+  // Primary color for main branding
+  static const Color kPrimaryColor = Color.fromARGB(255, 103, 2, 121);
+
+  // Accent color for secondary elements, buttons, highlights
+  static const Color kAccentColor = Color.fromARGB(255, 3, 219, 198);
 }
 
 class UserRole {
