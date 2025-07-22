@@ -1,12 +1,12 @@
 import 'package:turuke_app/utils/string_utils.dart';
 
 class Vaccination {
-  final int? id; // nullable if not yet persisted (used in offline mode)
+  final int? id;
   final int flockId;
   final String name;
   final String vaccinationDate;
   final String? notes;
-  final String flockName;
+  final String? flockName;
 
   Vaccination({
     this.id,
@@ -14,7 +14,7 @@ class Vaccination {
     required this.name,
     required this.vaccinationDate,
     required this.notes,
-    required this.flockName,
+    this.flockName,
   });
 
   factory Vaccination.fromJson(Map<String, dynamic> json) {

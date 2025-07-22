@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -11,7 +13,10 @@ import 'package:turuke_app/models/vaccination.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer_screen.dart';
 import 'package:turuke_app/utils/string_utils.dart';
+import 'package:turuke_app/utils/system_utils.dart';
 import 'package:uuid/uuid.dart';
+
+var logger = Logger(printer: PrettyPrinter());
 
 class VaccinationLogScreen extends StatefulWidget {
   static const String routeName = '/vaccination-log';
@@ -25,67 +30,121 @@ class VaccinationLogScreen extends StatefulWidget {
 class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
   List<Vaccination> _vaccinations = [];
   List<Flock> _flocks = [];
-  Database? _db;
 
   bool _isLoading = true;
+  final DateFormat _dateFormat = DateFormat('d MMMM, y');
 
   @override
   void initState() {
     super.initState();
-    _initDb();
-    _fetchData();
-    _fetchVaccinations();
+    _initializeData();
   }
 
-  Future<void> _initDb() async {
-    _db = await openDatabase(
-      path.join(await getDatabasesPath(), 'turuke.db'),
-      onCreate:
-          (db, version) => db.execute(
-            'CREATE TABLE vaccination_pending(id TEXT PRIMARY KEY, flock_id INTEGER, vaccination_date TEXT, notes TEXT)',
-          ),
-      version: 1,
-    );
+  Future<void> _initializeData() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+    await _fetchData();
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _fetchData() async {
-    setState(() => _isLoading = true);
+    if (!mounted) return;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
-    final farmId = authProvider.user!.farmId;
+    final farmId = authProvider.user?.farmId;
+
+    if (farmId == null) {
+      logger.e('Farm ID is null. Cannot fetch data.');
+      if (mounted) {
+        SystemUtils.showSnackBar(
+          context,
+          'Error: Farm ID not found. Please re-login.',
+        );
+      }
+      return;
+    }
 
     try {
-      // Fetch flocks
       final flocksRes = await http.get(
         Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: headers,
       );
       if (flocksRes.statusCode == 200) {
         final List<dynamic> jsonList = jsonDecode(flocksRes.body);
-        _flocks = jsonList.map((json) => Flock.fromJson(json)).toList();
+        if (mounted) {
+          setState(() {
+            _flocks = jsonList.map((json) => Flock.fromJson(json)).toList();
+          });
+        }
+      } else {
+        logger.w(
+          'Failed to fetch flocks (${flocksRes.statusCode}). Falling back to offline flocks.',
+        );
+      }
+
+      final vaccinationsRes = await http.get(
+        Uri.parse(
+          '${Constants.LAYERS_API_BASE_URL}/vaccinations?farm_id=$farmId',
+        ),
+        headers: headers,
+      );
+      if (mounted) {
+        if (vaccinationsRes.statusCode == 200) {
+          final List<dynamic> jsonList = jsonDecode(vaccinationsRes.body);
+          _vaccinations =
+              jsonList.map((json) => Vaccination.fromJson(json)).toList();
+        } else {
+          logger.w(
+            'Failed to fetch vaccinations (${vaccinationsRes.statusCode}). Falling back to offline vaccinations.',
+          );
+        }
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      logger.e('Error fetching data online: $e. Falling back to offline.');
+      if (mounted) {
+        SystemUtils.showSnackBar(context, 'Failed to fetch data online.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  Future<void> _showAddVaccinationDialog() async {
+  Future<void> _showAddEditVaccinationDialog({
+    Vaccination? vaccinationToEdit,
+  }) async {
     final _formKey = GlobalKey<FormState>();
-    int? _flockId;
-    String _vaccineName = '';
-    DateTime _vaccinationDate = DateTime.now();
-    String _notes = '';
+    int? _flockId = vaccinationToEdit?.flockId;
+    String _vaccineName = vaccinationToEdit?.name ?? '';
+    DateTime _vaccinationDate =
+        vaccinationToEdit != null
+            ? _dateFormat.parse(vaccinationToEdit.vaccinationDate)
+            : DateTime.now();
+    String _notes = vaccinationToEdit?.notes ?? '';
 
-    final result = await showDialog<Map<String, dynamic>>(
+    // final TextEditingController vaccineNameController = TextEditingController(
+    //   text: _vaccineName,
+    // );
+    // final TextEditingController notesController = TextEditingController(
+    //   text: _notes,
+    // );
+
+    final result = await showDialog<bool>(
       context: context,
       builder: (context) {
-        final vaccinationDateController = TextEditingController(
-          text: _vaccinationDate.toIso8601String().substring(0, 10),
-        );
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (context, setStateInDialog) {
             return AlertDialog(
-              title: Text('Add Vaccination'),
+              title: Text(
+                vaccinationToEdit != null
+                    ? 'Edit Vaccination'
+                    : 'Add Vaccination',
+              ),
               content: Form(
                 key: _formKey,
                 child: SingleChildScrollView(
@@ -93,7 +152,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       DropdownButtonFormField<int>(
-                        hint: Text('Select Flock'),
+                        decoration: _inputDecoration('Select Flock'),
                         value: _flockId,
                         items:
                             _flocks
@@ -104,42 +163,67 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                                   ),
                                 )
                                 .toList(),
-                        onChanged: (value) => _flockId = value,
-                        validator: (value) => value == null ? 'Required' : null,
-                      ),
-                      TextFormField(
-                        decoration: InputDecoration(labelText: 'Vaccine Name'),
+                        onChanged: (value) {
+                          setStateInDialog(() {
+                            _flockId = value;
+                          });
+                        },
                         validator:
-                            (value) => value!.isEmpty ? 'Required' : null,
+                            (value) =>
+                                value == null ? 'Flock is required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        decoration: _inputDecoration('Vaccine Name'),
+                        validator:
+                            (value) =>
+                                value!.isEmpty
+                                    ? 'Vaccine Name is required'
+                                    : null,
                         onChanged: (value) => _vaccineName = value,
                       ),
+                      const SizedBox(height: 16),
                       TextFormField(
-                        decoration: InputDecoration(
-                          labelText: 'Vaccination Date',
-                        ),
+                        decoration: _inputDecoration('Arrival Date'),
                         readOnly: true,
-                        controller: vaccinationDateController,
                         onTap: () async {
                           final picked = await showDatePicker(
                             context: context,
                             initialDate: _vaccinationDate,
                             firstDate: DateTime(2020),
                             lastDate: DateTime.now(),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: ColorScheme.light(
+                                    primary: Constants.kPrimaryColor,
+                                    onPrimary: Colors.white,
+                                    onSurface: Colors.black87,
+                                  ),
+                                  textButtonTheme: TextButtonThemeData(
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Constants.kPrimaryColor,
+                                    ),
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
                           );
                           if (picked != null) {
-                            setState(() {
+                            setStateInDialog(() {
                               _vaccinationDate = picked;
-                              vaccinationDateController.text = _vaccinationDate
-                                  .toIso8601String()
-                                  .substring(0, 10);
                             });
                           }
                         },
-                      ),
-                      TextFormField(
-                        decoration: InputDecoration(
-                          labelText: 'Notes (Optional)',
+                        controller: TextEditingController(
+                          text: _dateFormat.format(_vaccinationDate),
                         ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        decoration: _inputDecoration('Notes (Optional)'),
+                        maxLines: 3,
                         onChanged: (value) => _notes = value,
                       ),
                     ],
@@ -148,24 +232,23 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Cancel'),
+                  onPressed: () => Navigator.pop(context, false),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Constants.kPrimaryColor,
+                  ),
+                  child: const Text('Cancel'),
                 ),
                 ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState!.validate() && _flockId != null) {
-                      Navigator.pop(context, {
-                        // flock_id, vaccine_name, vaccination_date, notes
-                        'flock_id': _flockId,
-                        'vaccine_name': _vaccineName,
-                        'vaccination_date': _vaccinationDate
-                            .toIso8601String()
-                            .substring(0, 10),
-                        'notes': _notes,
-                      });
+                      Navigator.pop(context, true);
                     }
                   },
-                  child: Text('Save'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Constants.kPrimaryColor,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Save'),
                 ),
               ],
             );
@@ -174,60 +257,79 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
       },
     );
 
-    if (result != null) {
+    // vaccineNameController.dispose();
+    // notesController.dispose();
+
+    if (result == true) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final data = {'farm_id': authProvider.user!.farmId, ...result};
-      try {
-        final response = await http.post(
-          Uri.parse('${Constants.LAYERS_API_BASE_URL}/vaccinations'),
-          headers: await authProvider.getHeaders(),
-          body: jsonEncode(data),
+      final farmId = authProvider.user?.farmId;
+
+      if (farmId == null) {
+        SystemUtils.showSnackBar(
+          context,
+          'Farm ID not available. Cannot save.',
         );
-        if (response.statusCode == 201) {
-          _fetchVaccinations();
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Saved successfully')));
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Save failed. Try again later')),
+        return;
+      }
+
+      final vaccination = Vaccination(
+        flockId: _flockId!,
+        name: _vaccineName,
+        vaccinationDate: _dateFormat.format(_vaccinationDate),
+        notes: _notes,
+      );
+
+      try {
+        http.Response response;
+        if (vaccinationToEdit != null) {
+          // UPDATE existing record
+          response = await http.patch(
+            Uri.parse(
+              '${Constants.LAYERS_API_BASE_URL}/vaccinations/${vaccinationToEdit.id}',
+            ),
+            headers: await authProvider.getHeaders(),
+            body: jsonEncode(vaccination.toJson()),
           );
-          throw Exception('Failed to save');
+          if (response.statusCode == 200) {
+            SystemUtils.showSnackBar(
+              context,
+              'Vaccination updated successfully!',
+            );
+            await _fetchData();
+          } else {
+            throw Exception('Failed to update vaccination: ${response.body}');
+          }
+        } else {
+          response = await http.post(
+            Uri.parse('${Constants.LAYERS_API_BASE_URL}/vaccinations'),
+            headers: await authProvider.getHeaders(),
+            body: jsonEncode(vaccination.toJson()),
+          );
+          if (response.statusCode == 201) {
+            SystemUtils.showSnackBar(
+              context,
+              'Vaccination added successfully!',
+            );
+            await _fetchData();
+          } else {
+            throw Exception('Failed to add vaccination: ${response.body}');
+          }
         }
       } catch (e) {
-        await _db!.insert('vaccination_pending', {
-          'id': const Uuid().v4(),
-          ...data,
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Saved offline, will sync later')),
-        );
-        _fetchVaccinations();
+        logger.e('Error saving/updating vaccination: $e.');
       }
     }
   }
 
-  Future<void> _fetchVaccinations() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    try {
-      final response = await http.get(
-        Uri.parse(
-          '${Constants.LAYERS_API_BASE_URL}/vaccinations?farm_id=${authProvider.user!.farmId}',
-        ),
-        headers: await authProvider.getHeaders(),
-      );
-      if (response.statusCode == 200) {
-        setState(() {
-          final List<dynamic> jsonList = jsonDecode(response.body);
-          _vaccinations =
-              jsonList.map((json) => Vaccination.fromJson(json)).toList();
-
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-    }
+  InputDecoration _inputDecoration(String labelText) {
+    return InputDecoration(
+      labelText: labelText,
+      border: const OutlineInputBorder(),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Constants.kPrimaryColor, width: 2.0),
+      ),
+      labelStyle: TextStyle(color: Constants.kPrimaryColor),
+    );
   }
 
   void _onRouteSelected(String route) {
@@ -237,36 +339,137 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Vaccination Log')),
+      appBar: AppBar(
+        title: const Text(
+          'Vaccination Log',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Constants.kPrimaryColor,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
       drawer: AppNavigationDrawer(
         selectedRoute: VaccinationLogScreen.routeName,
         onRouteSelected: _onRouteSelected,
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _vaccinations.isEmpty
-              ? const Center(child: Text('No vaccination records found'))
-              : ListView.builder(
-                padding: EdgeInsets.all(16.0),
-                itemCount: _vaccinations.length,
-                itemBuilder: (context, index) {
-                  final vaccination = _vaccinations[index];
-                  final vaccinationDate = StringUtils.formatDateDisplay(
-                    vaccination.vaccinationDate,
-                  );
-                  return ListTile(
-                    leading: Icon(Icons.vaccines),
-                    title: Text(vaccination.name),
-                    subtitle: Text(
-                      'Flock: ${vaccination.flockName} | Date: $vaccinationDate',
+      body: RefreshIndicator(
+        onRefresh: _fetchData,
+        color: Constants.kPrimaryColor,
+        child:
+            _isLoading
+                ? Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Constants.kPrimaryColor,
                     ),
-                  );
-                },
-              ),
+                  ),
+                )
+                : Column(
+                  children: [
+                    Expanded(
+                      child:
+                          _vaccinations.isEmpty
+                              ? const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: Text(
+                                    'No vaccination records found. Tap the + button to add one.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              : ListView.builder(
+                                padding: const EdgeInsets.all(8.0),
+                                itemCount: _vaccinations.length,
+                                itemBuilder: (context, index) {
+                                  final vaccination = _vaccinations[index];
+                                  final flockName =
+                                      _flocks
+                                          .firstWhere(
+                                            (f) => f.id == vaccination.flockId,
+                                            orElse:
+                                                () => Flock(
+                                                  id: vaccination.flockId,
+                                                  name:
+                                                      'Unknown Flock', // Default name for display
+                                                  farmId: 0,
+                                                  arrivalDate: '',
+                                                  initialCount: 0,
+                                                  currentCount: 0,
+                                                  ageWeeks: 0,
+                                                  status: 0,
+                                                  currentAgeWeeks: 0,
+                                                ),
+                                          )
+                                          .name;
+                                  final vaccinationDateDisplay =
+                                      StringUtils.formatDateDisplay(
+                                        vaccination.vaccinationDate,
+                                      );
+
+                                  return Card(
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 8.0,
+                                      horizontal: 4.0,
+                                    ),
+                                    elevation: 2,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: ListTile(
+                                      leading: CircleAvatar(
+                                        backgroundColor: Constants.kAccentColor,
+                                        child: Icon(
+                                          Icons.vaccines,
+                                          color: Constants.kPrimaryColor,
+                                        ),
+                                      ),
+                                      title: Text(
+                                        vaccination.name, // Vaccine name
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Flock: $flockName'),
+                                          Text('Date: $vaccinationDateDisplay'),
+                                          if (vaccination.notes != null &&
+                                              vaccination.notes!.isNotEmpty)
+                                            Text('Notes: ${vaccination.notes}'),
+                                        ],
+                                      ),
+                                      trailing: const Icon(
+                                        Icons.edit,
+                                        color: Colors.grey,
+                                      ),
+                                      onTap:
+                                          () => _showAddEditVaccinationDialog(
+                                            vaccinationToEdit: vaccination,
+                                          ),
+                                    ),
+                                  );
+                                },
+                              ),
+                    ),
+                  ],
+                ),
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddVaccinationDialog,
-        child: Icon(Icons.add),
+        onPressed:
+            _flocks
+                    .isEmpty // Disable FAB if no flocks available to link
+                ? null
+                : () => _showAddEditVaccinationDialog(vaccinationToEdit: null),
+        backgroundColor: Constants.kPrimaryColor,
+        foregroundColor: Colors.white,
+        tooltip: 'Add Vaccination Log',
+        child: const Icon(Icons.add),
       ),
     );
   }
