@@ -34,14 +34,20 @@ class User {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      if (id != null) 'id': id,
+    final data = {
       'first_name': firstName,
       'last_name': lastName,
       'email': email,
+      'farm_id': farmId,
       'role': role,
       'status': status,
-      'farm_id': farmId,
     };
+
+    // Only include password if adding a new user OR if editing and password field is not empty
+    if (password != null && password!.isNotEmpty) {
+      data['password'] = password;
+    }
+
+    return data;
   }
 }

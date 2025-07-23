@@ -2,15 +2,17 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as path;
+import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/user.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
+import 'package:turuke_app/utils/system_utils.dart';
+
+var logger = Logger(printer: PrettyPrinter());
 
 class AddUserScreen extends StatefulWidget {
-  static final String routeName = '/add-user';
+  static const String routeName = '/add-user';
 
   const AddUserScreen({super.key});
 
@@ -20,22 +22,17 @@ class AddUserScreen extends StatefulWidget {
 
 class _AddUserScreenState extends State<AddUserScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _firstName = '';
-  String _lastName = '';
-  String _email = '';
-  String _password = '';
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
   bool _isLoading = false;
-  String? _error;
   bool _isObscured = true;
-  User? _user;
+  User? _userToEdit;
   bool _isEditing = false;
   bool _isSelfEditing = false;
-  int _currentUserRole = UserRole.VIEWER;
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-
+  int _selectedRole = UserRole.VIEWER;
   @override
   void initState() {
     super.initState();
@@ -43,15 +40,19 @@ class _AddUserScreenState extends State<AddUserScreen> {
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null && args['user'] != null) {
-        setState(() {
-          _user = args['user'];
-          _isEditing = true;
-          _firstNameController.text = _user!.firstName ?? '';
-          _lastNameController.text = _user!.lastName ?? '';
-          _emailController.text = _user!.email;
-          _currentUserRole = _user!.role;
-        });
+        _userToEdit = args['user'];
+        _isEditing = true;
+        _firstNameController.text = _userToEdit!.firstName ?? '';
+        _lastNameController.text = _userToEdit!.lastName ?? '';
+        _emailController.text = _userToEdit!.email;
+        _selectedRole = _userToEdit!.role;
+
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        _isSelfEditing = authProvider.user?.id == _userToEdit!.id;
+      } else {
+        _selectedRole = UserRole.VIEWER;
       }
+      setState(() {});
     });
   }
 
@@ -64,172 +65,370 @@ class _AddUserScreenState extends State<AddUserScreen> {
     super.dispose();
   }
 
-  Future<void> _saveUser() async {
-    if (!_formKey.currentState!.validate()) return;
+  InputDecoration _inputDecoration(
+    String labelText, {
+    Widget? suffixIcon,
+    bool enabled = true,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      border: const OutlineInputBorder(),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Constants.kPrimaryColor, width: 2.0),
+      ),
+      enabledBorder:
+          enabled
+              ? const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey),
+              )
+              : OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+      labelStyle: TextStyle(color: Constants.kPrimaryColor),
+      suffixIcon: suffixIcon,
+      fillColor: enabled ? Colors.white : Colors.grey.shade100,
+      filled: true,
+    );
+  }
+
+  Future<void> _handleSubmit() async {
+    if (!_formKey.currentState!.validate()) {
+      SystemUtils.showSnackBar(
+        context,
+        'Please correct the errors in the form.',
+      );
+      return;
+    }
     _formKey.currentState!.save();
+
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
-      _error = null;
     });
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
-    final farmId = authProvider.user!.farmId;
+    final farmId = authProvider.user?.farmId;
+
+    if (farmId == null) {
+      if (mounted) {
+        SystemUtils.showSnackBar(
+          context,
+          'Farm ID not available. Cannot save user.',
+        );
+      }
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      return;
+    }
+
+    User user = User(
+      firstName: _firstNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+      email: _emailController.text.trim(),
+      farmId: farmId,
+      role: _selectedRole,
+      password:
+          !_isEditing || _passwordController.text.isNotEmpty
+              ? _passwordController.text
+              : null,
+    );
+
+    http.Response response;
+    String successMessage;
+    String errorMessagePrefix;
 
     try {
-      final response = await http.post(
-        Uri.parse('${Constants.USERS_API_BASE_URL}/users'),
-        headers: headers,
-        body: jsonEncode({
-          'first_name': _firstName,
-          'last_name': _lastName,
-          'email': _email,
-          'farm_id': farmId,
-          'role': _currentUserRole,
-          'password': _password,
-        }),
-      );
-      if (response.statusCode == 201) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Successfully added user')));
-      } else {
-        setState(
-          () =>
-              _error =
-                  jsonDecode(response.body)['error'] ?? 'Failed to add user',
+      if (_isEditing) {
+        successMessage = 'User updated successfully!';
+        errorMessagePrefix = 'Failed to update user';
+        response = await http.put(
+          Uri.parse('${Constants.USERS_API_BASE_URL}/users/${_userToEdit!.id}'),
+          headers: headers,
+          body: jsonEncode(user.toJson()),
         );
-        ScaffoldMessenger.of(
+      } else {
+        successMessage = 'User added successfully!';
+        errorMessagePrefix = 'Failed to add user';
+        response = await http.post(
+          Uri.parse('${Constants.USERS_API_BASE_URL}/users'),
+          headers: headers,
+          body: jsonEncode(user.toJson()),
+        );
+      }
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        SystemUtils.showSnackBar(context, successMessage);
+        if (!_isEditing) {
+          _firstNameController.clear();
+          _lastNameController.clear();
+          _emailController.clear();
+          _passwordController.clear();
+          setState(() {
+            _selectedRole = UserRole.VIEWER;
+          });
+        }
+        Navigator.of(context).pop();
+      } else {
+        String serverMessage = 'Server error (${response.statusCode})';
+        try {
+          final errorBody = jsonDecode(response.body);
+          if (errorBody is Map && errorBody.containsKey('message')) {
+            serverMessage = errorBody['message'];
+          }
+        } catch (jsonError) {
+          logger.e(
+            'Failed to parse error response body: $jsonError. Raw body: ${response.body}',
+          );
+        }
+        SystemUtils.showSnackBar(
           context,
-        ).showSnackBar(SnackBar(content: Text('Unable to add user')));
+          '$errorMessagePrefix: $serverMessage',
+        );
+        logger.e(
+          '$errorMessagePrefix: ${response.statusCode} - $serverMessage',
+        );
       }
     } catch (e) {
-      setState(() => _error = 'Network error. User queued for sync.');
-      // Save to sqflite for offline sync
-      final db = await openDatabase(
-        path.join(await getDatabasesPath(), 'turuke.db'),
-      );
-      await db.insert('users_pending', {
-        'first_name': _firstName,
-        'last_name': _lastName,
-        'email': _email,
-        'farm_id': farmId,
-        'role': _currentUserRole,
-        'password': _password,
-        'created_at': DateTime.now().toIso8601String(),
-      });
+      logger.e('Network error during user save/update: $e');
+      if (mounted) {
+        SystemUtils.showSnackBar(
+          context,
+          'Network error. Please check your internet connection.',
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
+  }
+
+  String? _validatePassword(String? value) {
+    if (!_isEditing || value!.isNotEmpty) {
+      // Required for new user or if entered for existing
+      if (value == null || value.isEmpty) {
+        return 'Password is required';
+      }
+      if (value.length < 8) {
+        return 'Password must be at least 8 characters long';
+      }
+      // if (!value.contains(RegExp(r'[A-Z]'))) {
+      //   return 'Password must contain at least one uppercase letter';
+      // }
+      // if (!value.contains(RegExp(r'[a-z]'))) {
+      //   return 'Password must contain at least one lowercase letter';
+      // }
+      // if (!value.contains(RegExp(r'[0-9]'))) {
+      //   return 'Password must contain at least one digit';
+      // }
+      // if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      //   return 'Password must contain at least one special character';
+      // }
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    _currentUserRole = authProvider.user!.role;
-    if (_currentUserRole != UserRole.ADMIN &&
-        _currentUserRole != UserRole.MANAGER) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Add User')),
-        body: const Center(
-          child: Text('Your account is not authorized to add users'),
-        ),
-      );
-    }
-    if (_user != null) {
-      _isSelfEditing = _user!.id == authProvider.user!.id!;
-    }
+    final authenticatedUserRole = authProvider.user?.role ?? UserRole.VIEWER;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Add User')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
+    if (authenticatedUserRole != UserRole.ADMIN &&
+        authenticatedUserRole != UserRole.MANAGER) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'User Management',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Constants.kPrimaryColor,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                TextFormField(
-                  controller: _firstNameController,
-                  decoration: const InputDecoration(labelText: 'First Name'),
-                  validator: (value) => value!.isEmpty ? 'Required' : null,
-                  onSaved: (value) => _firstName = value!,
-                ),
-                TextFormField(
-                  controller: _lastNameController,
-                  decoration: const InputDecoration(labelText: 'Last Name'),
-                  validator: (value) => value!.isEmpty ? 'Required' : null,
-                  onSaved: (value) => _lastName = value!,
-                ),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'Email'),
-                  keyboardType: TextInputType.emailAddress,
-                  validator:
-                      (value) =>
-                          value!.isEmpty || !value.contains('@')
-                              ? 'Enter a valid email'
-                              : null,
-                  onSaved: (value) => _email = value!,
-                ),
-                DropdownButtonFormField<int>(
-                  decoration: InputDecoration(
-                    labelText: 'Role',
-                    enabled: _isSelfEditing, // Controls visual enabled state
-                  ),
-                  value: _currentUserRole,
-                  items:
-                      UserRole.allRoleValues.map((roleValue) {
-                        return DropdownMenuItem<int>(
-                          value: roleValue,
-                          child: Text(UserRole.getString(roleValue)),
-                        );
-                      }).toList(),
-                  onChanged:
-                      _isSelfEditing
-                          ? null
-                          : (value) =>
-                              setState(() => _currentUserRole = value!),
-                  validator: (value) => value == null ? 'Required' : null,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                ),
-                TextFormField(
-                  obscureText: _isObscured,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isObscured ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isObscured = !_isObscured;
-                        });
-                      },
-                    ),
-                  ),
-                  validator:
-                      (value) =>
-                          value!.isEmpty || value.length < 6
-                              ? 'Minimum 6 characters'
-                              : null,
-                  onSaved: (value) => _password = value!,
-                  enableSuggestions: false,
-                  autocorrect: false,
-                ),
+                Icon(Icons.lock_outline, size: 80, color: Colors.grey.shade400),
                 const SizedBox(height: 16),
-                if (_error != null)
-                  Text(_error!, style: const TextStyle(color: Colors.red)),
-                _isLoading
-                    ? const CircularProgressIndicator()
-                    : ElevatedButton(
-                      onPressed: _isEditing ? null : _saveUser,
-                      child: const Text('Add User'),
-                    ),
+                Text(
+                  'Access Denied',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Your account is not authorized to add or edit users.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                ),
               ],
             ),
           ),
         ),
+      );
+    }
+
+    // Only admin/manager can change roles, and they can't change their own role
+    final bool canChangeRole =
+        (authenticatedUserRole == UserRole.ADMIN ||
+            authenticatedUserRole == UserRole.MANAGER) &&
+        !_isSelfEditing;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          _isEditing ? 'Edit User' : 'Add User',
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Constants.kPrimaryColor,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _firstNameController,
+                      decoration: _inputDecoration('First Name'),
+                      validator:
+                          (value) =>
+                              value!.trim().isEmpty
+                                  ? 'First Name is required'
+                                  : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _lastNameController,
+                      decoration: _inputDecoration('Last Name'),
+                      validator:
+                          (value) =>
+                              value!.trim().isEmpty
+                                  ? 'Last Name is required'
+                                  : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: _inputDecoration(
+                        'Email',
+                        enabled: !_isEditing,
+                      ), // Email usually not editable when editing
+                      keyboardType: TextInputType.emailAddress,
+                      validator:
+                          (value) =>
+                              value!.trim().isEmpty || !value.contains('@')
+                                  ? 'Enter a valid email'
+                                  : null,
+                      enabled: !_isEditing, // Disable email editing
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<int>(
+                      decoration: _inputDecoration(
+                        'Role',
+                        enabled: canChangeRole,
+                      ),
+                      value: _selectedRole,
+                      items:
+                          UserRole.allRoleValues.map((roleValue) {
+                            return DropdownMenuItem<int>(
+                              value: roleValue,
+                              child: Text(UserRole.getString(roleValue)),
+                            );
+                          }).toList(),
+                      onChanged:
+                          canChangeRole
+                              ? (value) =>
+                                  setState(() => _selectedRole = value!)
+                              : null, // Disable based on canChangeRole
+                      validator:
+                          (value) => value == null ? 'Role is required' : null,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _isObscured,
+                      decoration: _inputDecoration(
+                        _isEditing ? 'New Password (optional)' : 'Password',
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isObscured
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Constants.kPrimaryColor.withOpacity(0.7),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isObscured = !_isObscured;
+                            });
+                          },
+                        ),
+                      ),
+                      validator: _validatePassword,
+                      enableSuggestions: false,
+                      autocorrect: false,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: _isLoading ? null : _handleSubmit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Constants.kPrimaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14.0,
+                          horizontal: 24.0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        elevation: 3,
+                      ),
+                      child:
+                          _isLoading
+                              ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : Text(
+                                _isEditing ? 'Save Changes' : 'Add User',
+                                style: const TextStyle(fontSize: 18.0),
+                              ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Constants.kAccentColor,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
