@@ -236,19 +236,14 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     }
   }
 
-  // Modified _onRouteSelected to directly accept EggData
   void _onRouteSelected(String route, [Object? args]) async {
-    // Check if the current route is already the target route to prevent pushing duplicates
     if (ModalRoute.of(context)?.settings.name != route) {
-      // Use await to wait for the EggCollectionScreen to return
       final result = await Navigator.pushNamed(context, route, arguments: args);
-      // If the EggCollectionScreen signals a save/update, refresh the list
       if (result == true) {
-        // Assuming EggCollectionScreen returns 'true' on successful save
         _fetchData();
       }
     } else {
-      Navigator.pop(context); // Just close the drawer if on the same page
+      Navigator.pop(context);
     }
   }
 
