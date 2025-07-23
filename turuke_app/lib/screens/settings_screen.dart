@@ -154,7 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   leading: const Icon(
                     Icons.lock_outline,
-                    color: Constants.kAccentColor,
+                    color: Constants.kPrimaryColor,
                   ),
                   title: const Text('Change Password'),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 18),
@@ -188,7 +188,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   leading: const Icon(
                     Icons.info_outline,
-                    color: Constants.kAccentColor,
+                    color: Constants.kPrimaryColor,
                   ),
                   title: const Text('App Version'),
                   trailing: Text(_appVersion),
@@ -197,7 +197,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   leading: const Icon(
                     Icons.policy_outlined,
-                    color: Constants.kAccentColor,
+                    color: Constants.kPrimaryColor,
                   ),
                   title: const Text('Privacy Policy'),
                   trailing: const Icon(Icons.open_in_new, size: 18),
@@ -209,7 +209,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   leading: const Icon(
                     Icons.description_outlined,
-                    color: Constants.kAccentColor,
+                    color: Constants.kPrimaryColor,
                   ),
                   title: const Text('Terms of Service'),
                   trailing: const Icon(Icons.open_in_new, size: 18),
@@ -221,7 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   leading: const Icon(
                     Icons.support_agent_outlined,
-                    color: Constants.kAccentColor,
+                    color: Constants.kPrimaryColor,
                   ),
                   title: const Text('Contact Support'),
                   trailing: const Icon(Icons.email_outlined, size: 18),
