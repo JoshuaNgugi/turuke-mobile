@@ -16,12 +16,14 @@ class MortalityDataSource extends DataTableSource {
     return DataRow(
       onSelectChanged: (selected) {
         if (selected == true && onSelect != null) {
-          onSelect!(mortalityData); // Trigger onSelect when row is tapped
+          onSelect!(mortalityData);
         }
       },
       cells: [
-        DataCell(Text(StringUtils.formatDateDisplay(mortalityData.recordedDate))),
-        DataCell(Text('${mortalityData.flockName}')),
+        DataCell(
+          Text(StringUtils.formatDateDisplay(mortalityData.recordedDate)),
+        ),
+        DataCell(Text(mortalityData.flockName ?? '')),
         DataCell(Text('${mortalityData.count}')),
       ],
     );
