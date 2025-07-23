@@ -7,7 +7,7 @@ class Disease {
   final String diagnosisDate;
   final int affectedCount;
   final String? notes;
-  final String flockName;
+  final String? flockName;
 
   Disease({
     this.id,
@@ -16,7 +16,7 @@ class Disease {
     required this.diagnosisDate,
     required this.affectedCount,
     required this.notes,
-    required this.flockName,
+    this.flockName,
   });
 
   factory Disease.fromJson(Map<String, dynamic> json) {
@@ -35,7 +35,7 @@ class Disease {
     return {
       if (id != null) 'id': id,
       'flock_id': flockId,
-      'name': name,
+      'disease_name': name,
       'diagnosis_date': diagnosisDate,
       'affected_count': affectedCount,
       'notes': notes,
