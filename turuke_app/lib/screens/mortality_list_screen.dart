@@ -9,7 +9,7 @@ import 'package:turuke_app/datasources/mortality_datasource.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/models/mortality.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/screens/add_mortality_screen.dart';
+import 'package:turuke_app/screens/add_edit_mortality_screen.dart';
 import 'package:turuke_app/screens/navigation_drawer_screen.dart';
 import 'package:turuke_app/utils/system_utils.dart';
 
@@ -129,7 +129,7 @@ class _MortalityListScreenState extends State<MortalityListScreen> {
     final dataSource = MortalityDataSource(
       mortality: _mortalityList,
       onSelect:
-          (entry) => _onRouteSelected(AddMortalityScreen.routeName, {
+          (entry) => _onRouteSelected(AddEditMortalityScreen.routeName, {
             'mortality': entry,
           }),
     );
@@ -207,7 +207,7 @@ class _MortalityListScreenState extends State<MortalityListScreen> {
                 ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _onRouteSelected(AddMortalityScreen.routeName),
+        onPressed: () => _onRouteSelected(AddEditMortalityScreen.routeName),
         tooltip: 'Record Mortality',
         backgroundColor: Constants.kPrimaryColor,
         foregroundColor: Colors.white,
