@@ -2,14 +2,14 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart'; // For consistent date formatting
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/flock.dart';
-import 'package:turuke_app/models/mortality.dart'; // Ensure this model exists and is correct
+import 'package:turuke_app/models/mortality.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/utils/system_utils.dart'; // For SnackBar messages
+import 'package:turuke_app/utils/system_utils.dart';
 
 var logger = Logger(printer: PrettyPrinter());
 
@@ -89,8 +89,7 @@ class _AddEditMortalityScreenState extends State<AddEditMortalityScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
-    final farmId = authProvider.user?.farmId; // Use null-safe access
-
+    final farmId = authProvider.user?.farmId;
     if (farmId == null) {
       logger.e('Farm ID is null. Cannot fetch flocks.');
       if (mounted) {
@@ -263,9 +262,7 @@ class _AddEditMortalityScreenState extends State<AddEditMortalityScreen> {
                         value: _flockId,
                         items:
                             _flocks
-                                .where(
-                                  (flock) => flock.status == 1,
-                                ) // Active flocks only
+                                .where((flock) => flock.status == 1)
                                 .map(
                                   (flock) => DropdownMenuItem(
                                     value: flock.id,
