@@ -119,205 +119,220 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
     Vaccination? vaccinationToEdit,
   }) async {
     final _formKey = GlobalKey<FormState>();
+
     int? _flockId = vaccinationToEdit?.flockId;
-    String _vaccineName = vaccinationToEdit?.name ?? '';
     DateTime _vaccinationDate =
         vaccinationToEdit != null
             ? _dateFormat.parse(vaccinationToEdit.vaccinationDate)
             : DateTime.now();
+
+    String _vaccineName = vaccinationToEdit?.name ?? '';
     String _notes = vaccinationToEdit?.notes ?? '';
 
-    // final TextEditingController vaccineNameController = TextEditingController(
-    //   text: _vaccineName,
-    // );
-    // final TextEditingController notesController = TextEditingController(
-    //   text: _notes,
-    // );
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateInDialog) {
-            return AlertDialog(
-              title: Text(
-                vaccinationToEdit != null
-                    ? 'Edit Vaccination'
-                    : 'Add Vaccination',
-              ),
-              content: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      DropdownButtonFormField<int>(
-                        decoration: _inputDecoration('Select Flock'),
-                        value: _flockId,
-                        items:
-                            _flocks
-                                .map<DropdownMenuItem<int>>(
-                                  (flock) => DropdownMenuItem<int>(
-                                    value: flock.id,
-                                    child: Text(flock.name),
-                                  ),
-                                )
-                                .toList(),
-                        onChanged: (value) {
-                          setStateInDialog(() {
-                            _flockId = value;
-                          });
-                        },
-                        validator:
-                            (value) =>
-                                value == null ? 'Flock is required' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        decoration: _inputDecoration('Vaccine Name'),
-                        validator:
-                            (value) =>
-                                value!.isEmpty
-                                    ? 'Vaccine Name is required'
-                                    : null,
-                        onChanged: (value) => _vaccineName = value,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        decoration: _inputDecoration('Arrival Date'),
-                        readOnly: true,
-                        onTap: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: _vaccinationDate,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime.now(),
-                            builder: (context, child) {
-                              return Theme(
-                                data: Theme.of(context).copyWith(
-                                  colorScheme: ColorScheme.light(
-                                    primary: Constants.kPrimaryColor,
-                                    onPrimary: Colors.white,
-                                    onSurface: Colors.black87,
-                                  ),
-                                  textButtonTheme: TextButtonThemeData(
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Constants.kPrimaryColor,
-                                    ),
-                                  ),
-                                ),
-                                child: child!,
-                              );
-                            },
-                          );
-                          if (picked != null) {
-                            setStateInDialog(() {
-                              _vaccinationDate = picked;
-                            });
-                          }
-                        },
-                        controller: TextEditingController(
-                          text: _dateFormat.format(_vaccinationDate),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        decoration: _inputDecoration('Notes (Optional)'),
-                        maxLines: 3,
-                        onChanged: (value) => _notes = value,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Constants.kPrimaryColor,
-                  ),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate() && _flockId != null) {
-                      Navigator.pop(context, true);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Constants.kPrimaryColor,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+    final vaccineNameController = TextEditingController(text: _vaccineName);
+    final notesController = TextEditingController(text: _notes);
+    final vaccinationDateController = TextEditingController(
+      text: _dateFormat.format(_vaccinationDate),
     );
 
-    // vaccineNameController.dispose();
-    // notesController.dispose();
-
-    if (result == true) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final farmId = authProvider.user?.farmId;
-
-      if (farmId == null) {
-        SystemUtils.showSnackBar(
-          context,
-          'Farm ID not available. Cannot save.',
-        );
-        return;
-      }
-
-      final vaccination = Vaccination(
-        flockId: _flockId!,
-        name: _vaccineName,
-        vaccinationDate: _dateFormat.format(_vaccinationDate),
-        notes: _notes,
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setStateInDialog) {
+              return AlertDialog(
+                title: Text(
+                  vaccinationToEdit != null
+                      ? 'Edit Vaccination'
+                      : 'Add Vaccination',
+                ),
+                content: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DropdownButtonFormField<int>(
+                          decoration: _inputDecoration('Select Flock'),
+                          value: _flockId,
+                          items:
+                              _flocks.map<DropdownMenuItem<int>>((flock) {
+                                return DropdownMenuItem<int>(
+                                  value: flock.id,
+                                  child: Text(flock.name),
+                                );
+                              }).toList(),
+                          onChanged: (value) {
+                            setStateInDialog(() {
+                              _flockId = value;
+                            });
+                          },
+                          validator:
+                              (value) =>
+                                  value == null ? 'Flock is required' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: vaccineNameController,
+                          decoration: _inputDecoration('Vaccine Name'),
+                          validator:
+                              (value) =>
+                                  value!.isEmpty
+                                      ? 'Vaccine Name is required'
+                                      : null,
+                          onChanged: (value) => _vaccineName = value,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: vaccinationDateController,
+                          decoration: _inputDecoration('Vaccination Date'),
+                          readOnly: true,
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: _vaccinationDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now(),
+                              builder: (context, child) {
+                                return Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: ColorScheme.light(
+                                      primary: Constants.kPrimaryColor,
+                                      onPrimary: Colors.white,
+                                      onSurface: Colors.black87,
+                                    ),
+                                    textButtonTheme: TextButtonThemeData(
+                                      style: TextButton.styleFrom(
+                                        foregroundColor:
+                                            Constants.kPrimaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            if (picked != null) {
+                              setStateInDialog(() {
+                                _vaccinationDate = picked;
+                                vaccinationDateController.text = _dateFormat
+                                    .format(picked); // ✅ update text
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: notesController,
+                          decoration: _inputDecoration('Notes (Optional)'),
+                          maxLines: 3,
+                          onChanged: (value) => _notes = value,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Constants.kPrimaryColor,
+                    ),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate() &&
+                          _flockId != null) {
+                        Navigator.pop(context, true);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Constants.kPrimaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Save'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
       );
 
-      try {
-        http.Response response;
-        if (vaccinationToEdit != null) {
-          // UPDATE existing record
-          response = await http.patch(
-            Uri.parse(
-              '${Constants.LAYERS_API_BASE_URL}/vaccinations/${vaccinationToEdit.id}',
-            ),
-            headers: await authProvider.getHeaders(),
-            body: jsonEncode(vaccination.toJson()),
-          );
-          if (response.statusCode == 200) {
-            SystemUtils.showSnackBar(
-              context,
-              'Vaccination updated successfully!',
-            );
-            await _fetchData();
-          } else {
-            throw Exception('Failed to update vaccination: ${response.body}');
-          }
-        } else {
-          response = await http.post(
-            Uri.parse('${Constants.LAYERS_API_BASE_URL}/vaccinations'),
-            headers: await authProvider.getHeaders(),
-            body: jsonEncode(vaccination.toJson()),
-          );
-          if (response.statusCode == 201) {
-            SystemUtils.showSnackBar(
-              context,
-              'Vaccination added successfully!',
-            );
-            await _fetchData();
-          } else {
-            throw Exception('Failed to add vaccination: ${response.body}');
-          }
-        }
-      } catch (e) {
-        logger.e('Error saving/updating vaccination: $e.');
+      if (result == true) {
+        await _saveVaccination(
+          vaccinationToEdit: vaccinationToEdit,
+          flockId: _flockId!,
+          name: _vaccineName,
+          date: _vaccinationDate,
+          notes: _notes,
+        );
       }
+    } finally {
+      vaccineNameController.dispose();
+      notesController.dispose();
+      vaccinationDateController.dispose();
+    }
+  }
+
+  Future<void> _saveVaccination({
+    required int flockId,
+    required String name,
+    required DateTime date,
+    required String notes,
+    Vaccination? vaccinationToEdit,
+  }) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final farmId = authProvider.user?.farmId;
+
+    if (farmId == null) {
+      SystemUtils.showSnackBar(context, 'Farm ID not available. Cannot save.');
+      return;
+    }
+
+    final vaccination = Vaccination(
+      flockId: flockId,
+      name: name,
+      vaccinationDate: _dateFormat.format(date),
+      notes: notes,
+    );
+
+    try {
+      http.Response response;
+      if (vaccinationToEdit != null) {
+        response = await http.patch(
+          Uri.parse(
+            '${Constants.LAYERS_API_BASE_URL}/vaccinations/${vaccinationToEdit.id}',
+          ),
+          headers: await authProvider.getHeaders(),
+          body: jsonEncode(vaccination.toJson()),
+        );
+        if (response.statusCode == 200) {
+          SystemUtils.showSnackBar(
+            context,
+            'Vaccination updated successfully!',
+          );
+          await _fetchData();
+        } else {
+          throw Exception('Failed to update vaccination: ${response.body}');
+        }
+      } else {
+        response = await http.post(
+          Uri.parse('${Constants.LAYERS_API_BASE_URL}/vaccinations'),
+          headers: await authProvider.getHeaders(),
+          body: jsonEncode(vaccination.toJson()),
+        );
+        if (response.statusCode == 201) {
+          SystemUtils.showSnackBar(context, 'Vaccination added successfully!');
+          await _fetchData();
+        } else {
+          throw Exception('Failed to add vaccination: ${response.body}');
+        }
+      }
+    } catch (e) {
+      logger.e('Error saving/updating vaccination: $e.');
     }
   }
 
