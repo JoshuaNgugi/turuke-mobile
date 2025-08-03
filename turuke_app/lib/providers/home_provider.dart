@@ -49,12 +49,9 @@ class HomeProvider with ChangeNotifier {
 
   Future<void> fetchHomeStats({String? month}) async {
     _status = HomeDataStatus.loading;
-    _errorMessage = null; // Clear previous errors
+    _errorMessage = null;
     notifyListeners();
 
-    // Session validation should ideally happen before or be handled by HttpClient
-    // For simplicity here, assuming HttpClient or AuthProvider handles token refresh/logout.
-    // If not, you might want to call authProvider.validateSession() here.
     final tokenExpiresAt = _authProvider.tokenExpiresAt;
     final token = _authProvider.token;
 
@@ -67,7 +64,6 @@ class HomeProvider with ChangeNotifier {
       _status = HomeDataStatus.error;
       _errorMessage = 'Session expired. Please log in again.';
       notifyListeners();
-      // Handle navigation to login screen in the UI layer
       return;
     }
 
@@ -119,13 +115,11 @@ class HomeProvider with ChangeNotifier {
         logger.e(
           'Failed to fetch overall egg yield (${eggYieldRes.statusCode}): ${eggYieldRes.body}',
         );
-        throw Exception(
-          'Failed to fetch overall egg yield',
-        ); // Re-throw for parent to catch
+        throw Exception('Failed to fetch overall egg yield');
       }
     } catch (e) {
       logger.e('Error fetching overall egg yield: $e');
-      rethrow; // Re-throw to be caught by fetchHomeStats
+      rethrow;
     }
   }
 
@@ -176,9 +170,7 @@ class HomeProvider with ChangeNotifier {
           flocks.map((flock) {
             final eggData = eggs.firstWhere(
               (eggData) => eggData.flockId == flock.id!,
-              orElse:
-                  () =>
-                      EggData.empty(), // Ensure EggData.empty() is handled appropriately (e.g., totalEggs = 0)
+              orElse: () => EggData.empty(),
             );
             final totalEggsCollected = eggData.totalEggs;
             final expectedEggs = flock.currentCount;
@@ -190,8 +182,10 @@ class HomeProvider with ChangeNotifier {
               flockId: flock.id ?? 0,
               flockName: flock.name,
               eggPercentage: percentage,
-              collectionDate: StringUtils.formatDateDisplay(eggData.collectionDate),
-              flockAge: flock.currentAgeWeeks,
+              collectionDate: StringUtils.formatDateDisplay(
+                eggData.collectionDate,
+              ),
+              flockAge: flock.currentAgeWeeks ?? 0,
             );
           }).toList();
     } catch (e) {
