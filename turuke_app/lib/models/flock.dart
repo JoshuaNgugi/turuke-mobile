@@ -1,15 +1,15 @@
 import 'package:turuke_app/utils/string_utils.dart';
 
 class Flock {
-  final int? id; // nullable if not yet persisted (used in offline mode)
+  final int? id;
   final int farmId;
   final String name;
   final String arrivalDate;
   final int initialCount;
   final int currentCount;
-  final int ageWeeks;
+  final int? ageWeeks;
   final int status;
-  final int currentAgeWeeks;
+  final int? currentAgeWeeks;
 
   Flock({
     this.id,
@@ -18,9 +18,9 @@ class Flock {
     required this.arrivalDate,
     required this.initialCount,
     required this.currentCount,
-    required this.ageWeeks,
+    this.ageWeeks,
     required this.status,
-    required this.currentAgeWeeks,
+    this.currentAgeWeeks,
   });
 
   factory Flock.fromJson(Map<String, dynamic> json) {
@@ -41,11 +41,10 @@ class Flock {
     return {
       if (id != null) 'id': id,
       'farm_id': farmId,
-      'name': name,
+      'breed': name, // TODO: change db field name to flock_name
       'arrival_date': arrivalDate,
       'initial_count': initialCount,
       'current_count': currentCount,
-      'age_weeks': ageWeeks,
       'status': status,
     };
   }
