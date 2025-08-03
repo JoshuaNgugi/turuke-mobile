@@ -316,7 +316,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
       child: Padding(
         padding: EdgeInsets.all(16.0),
         child: Text(
-          'No egg collections found for the selected filters. Pull down to refresh or add a new entry.',
+          'No egg collections found for the selected filters. Add a new entry.',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 16, color: Colors.black54),
         ),
