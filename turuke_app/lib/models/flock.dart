@@ -27,7 +27,7 @@ class Flock {
     return Flock(
       id: json['id'],
       farmId: json['farm_id'],
-      name: json['breed'], // TODO: change to name
+      name: json['name'],
       arrivalDate: StringUtils.formatDateDisplay(json['arrival_date']),
       initialCount: json['initial_count'],
       currentCount: json['current_count'],
@@ -41,7 +41,7 @@ class Flock {
     return {
       if (id != null) 'id': id,
       'farm_id': farmId,
-      'breed': name, // TODO: change db field name to flock_name
+      'name': name,
       'arrival_date': arrivalDate,
       'initial_count': initialCount,
       'current_count': currentCount,

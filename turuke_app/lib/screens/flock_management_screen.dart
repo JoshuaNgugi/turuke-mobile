@@ -279,7 +279,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
           currentCount: _currentCount,
           arrivalDate: _arrivalDate,
           status: _status,
-          flockId: flockToEdit!.id,
+          flockId: (flockToEdit != null && flockToEdit.id != null) ? flockToEdit.id : null,
         );
       }
     } finally {

@@ -35,7 +35,7 @@ class EggData {
       collectionDate: StringUtils.formatDateDisplay(json['collection_date']),
       wholeEggs: json['whole_eggs'],
       brokenEggs: json['broken_eggs'],
-      flockName: json['breed'],
+      flockName: json['name'],
       totalEggs: json['total_eggs'],
     );
   }
@@ -47,7 +47,7 @@ class EggData {
       'collection_date': collectionDate,
       'whole_eggs': wholeEggs,
       'broken_eggs': brokenEggs,
-      'breed': flockName,
+      'name': flockName,
       'total_eggs': totalEggs,
     };
   }
