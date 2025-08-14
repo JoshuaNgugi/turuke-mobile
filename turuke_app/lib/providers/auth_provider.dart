@@ -64,10 +64,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> login(
-    String email,
-    String password,
-  ) async {
+  Future<void> login(String email, String password) async {
     try {
       final response = await HttpClient.post(
         Uri.parse('${Constants.API_BASE_URL}/auth/login'),
@@ -117,7 +114,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> verifyEmail(String code) async {
-    final response = await http.post(
+    final response = await HttpClient.post(
       Uri.parse('${Constants.API_BASE_URL}/auth/verify-email'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'code': code}),

@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
@@ -11,6 +10,7 @@ import 'package:turuke_app/models/mortality.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/add_edit_mortality_screen.dart';
 import 'package:turuke_app/screens/navigation_drawer_screen.dart';
+import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/system_utils.dart';
 
 var logger = Logger(printer: PrettyPrinter());
@@ -28,7 +28,6 @@ class _MortalityListScreenState extends State<MortalityListScreen> {
   final int _rowsPerPage = 10;
 
   List<Mortality> _mortalityList = [];
-  List<Flock> _flocks = [];
 
   @override
   void initState() {
@@ -56,16 +55,14 @@ class _MortalityListScreenState extends State<MortalityListScreen> {
     }
 
     try {
-      final flocksRes = await http.get(
+      final flocksRes = await HttpClient.get(
         Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: headers,
       );
       if (flocksRes.statusCode == 200) {
-        final List<dynamic> jsonList = jsonDecode(flocksRes.body);
+        jsonDecode(flocksRes.body);
         if (mounted) {
-          setState(() {
-            _flocks = jsonList.map((json) => Flock.fromJson(json)).toList();
-          });
+          setState(() {});
         }
       } else {
         logger.w(
@@ -79,7 +76,7 @@ class _MortalityListScreenState extends State<MortalityListScreen> {
       String mortalityUrl =
           '${Constants.LAYERS_API_BASE_URL}/mortality?farm_id=$farmId';
 
-      final mortalityRes = await http.get(
+      final mortalityRes = await HttpClient.get(
         Uri.parse(mortalityUrl),
         headers: headers,
       );

@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
@@ -11,6 +10,7 @@ import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer_screen.dart';
+import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/string_utils.dart';
 import 'package:turuke_app/utils/system_utils.dart';
 import 'package:uuid/uuid.dart';
@@ -69,7 +69,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
     }
 
     try {
-      final response = await http.get(
+      final response = await HttpClient.get(
         Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: await authProvider.getHeaders(),
       );
@@ -279,7 +279,10 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
           currentCount: _currentCount,
           arrivalDate: _arrivalDate,
           status: _status,
-          flockId: (flockToEdit != null && flockToEdit.id != null) ? flockToEdit.id : null,
+          flockId:
+              (flockToEdit != null && flockToEdit.id != null)
+                  ? flockToEdit.id
+                  : null,
         );
       }
     } finally {
@@ -315,10 +318,9 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
     );
 
     try {
-      http.Response response;
+      var response;
       if (flockId != null) {
-        // Update
-        response = await http.patch(
+        response = await HttpClient.patch(
           Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks/$flockId'),
           headers: await authProvider.getHeaders(),
           body: jsonEncode(flock.toJson()),
@@ -330,8 +332,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
           throw Exception('Failed to update flock: ${response.body}');
         }
       } else {
-        // Add new flock
-        response = await http.post(
+        response = await HttpClient.post(
           Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks'),
           headers: await authProvider.getHeaders(),
           body: jsonEncode(flock.toJson()),
@@ -380,7 +381,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
     if (!mounted) return;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     try {
-      final response = await http.delete(
+      final response = await HttpClient.delete(
         Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks/$flockId'),
         headers: await authProvider.getHeaders(),
       );

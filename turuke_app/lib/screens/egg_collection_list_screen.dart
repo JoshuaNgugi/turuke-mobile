@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
@@ -13,6 +12,7 @@ import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/egg_collection_screen.dart';
 import 'package:turuke_app/screens/navigation_drawer_screen.dart';
+import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/string_utils.dart';
 import 'package:turuke_app/utils/system_utils.dart';
 
@@ -83,7 +83,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
         eggProductionUrl += '&month=$_selectedMonth';
       }
 
-      final eggRes = await http.get(
+      final eggRes = await HttpClient.get(
         Uri.parse(eggProductionUrl),
         headers: headers,
       );
@@ -143,7 +143,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     Flock allFlocks = _createAllFlocksOption();
 
     try {
-      final flocksRes = await http.get(
+      final flocksRes = await HttpClient.get(
         Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: headers,
       );

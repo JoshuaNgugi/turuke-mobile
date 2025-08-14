@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/src/response.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +10,7 @@ import 'package:turuke_app/models/disease.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer_screen.dart';
+import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/string_utils.dart';
 import 'package:turuke_app/utils/system_utils.dart';
 
@@ -67,8 +68,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
     }
 
     try {
-      // Fetch flocks for the dropdown
-      final flocksRes = await http.get(
+      final flocksRes = await HttpClient.get(
         Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: headers,
       );
@@ -86,8 +86,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
         }
       }
 
-      // Fetch diseases
-      final diseasesRes = await http.get(
+      final diseasesRes = await HttpClient.get(
         Uri.parse('${Constants.LAYERS_API_BASE_URL}/diseases?farm_id=$farmId'),
         headers: headers,
       );
@@ -295,9 +294,9 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
       );
 
       try {
-        http.Response response;
+        Response response;
         if (diseaseToEdit != null) {
-          response = await http.patch(
+          response = await HttpClient.patch(
             Uri.parse(
               '${Constants.LAYERS_API_BASE_URL}/diseases/${diseaseToEdit.id}',
             ),
@@ -316,7 +315,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
             );
           }
         } else {
-          response = await http.post(
+          response = await HttpClient.post(
             Uri.parse('${Constants.LAYERS_API_BASE_URL}/diseases'),
             headers: await authProvider.getHeaders(),
             body: jsonEncode(disease.toJson()),

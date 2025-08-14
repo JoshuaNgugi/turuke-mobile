@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
@@ -11,6 +10,7 @@ import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/egg_data.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
+import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/system_utils.dart';
 import 'package:uuid/uuid.dart';
 
@@ -126,7 +126,7 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
     }
 
     try {
-      final response = await http.get(
+      final response = await HttpClient.get(
         Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: await authProvider.getHeaders(),
       );
@@ -222,14 +222,14 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
     try {
       final response =
           _isEditing
-              ? await http.patch(
+              ? await HttpClient.patch(
                 Uri.parse(
                   '${Constants.LAYERS_API_BASE_URL}/egg-production/$_collectionId',
                 ),
                 headers: await authProvider.getHeaders(),
                 body: jsonEncode(data),
               )
-              : await http.post(
+              : await HttpClient.post(
                 Uri.parse('${Constants.LAYERS_API_BASE_URL}/egg-production'),
                 headers: await authProvider.getHeaders(),
                 body: jsonEncode(data),

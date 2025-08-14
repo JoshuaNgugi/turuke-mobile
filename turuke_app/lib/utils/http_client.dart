@@ -24,7 +24,7 @@ class HttpClient {
       return response;
     } catch (e) {
       logger.e('Network error during GET request to $uri: $e');
-      throw Exception('Network error during GET request');
+      throw Exception('Network error during retrieval of data');
     }
   }
 
@@ -47,7 +47,7 @@ class HttpClient {
       return response;
     } catch (e) {
       logger.e('Network error during POST request to $uri: $e');
-      throw Exception('Network error during POST request');
+      throw Exception('Network error during sending data');
     }
   }
 
@@ -70,7 +70,53 @@ class HttpClient {
       return response;
     } catch (e) {
       logger.e('Network error during PATCH request to $uri: $e');
-      throw Exception('Network error during PATCH request');
+      throw Exception('Network error during updating data');
+    }
+  }
+
+  static Future<http.Response> put(
+    Uri uri, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    try {
+      final response = await http
+          .put(uri, headers: headers, body: body)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw TimeoutException(
+                'The request took too long to respond. Please try again later.',
+              );
+            },
+          );
+      return response;
+    } catch (e) {
+      logger.e('Network error during PUT request to $uri: $e');
+      throw Exception('Network error during updating data');
+    }
+  }
+
+  static Future<http.Response> delete(
+    Uri uri, {
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    try {
+      final response = await http
+          .delete(uri, headers: headers, body: body)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw TimeoutException(
+                'The request took too long to respond. Please try again later.',
+              );
+            },
+          );
+      return response;
+    } catch (e) {
+      logger.e('Network error during DELETE request to $uri: $e');
+      throw Exception('Network error during deleting data');
     }
   }
 }

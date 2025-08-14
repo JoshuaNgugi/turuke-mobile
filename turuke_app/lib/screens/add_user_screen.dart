@@ -1,12 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/src/response.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/user.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
+import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/system_utils.dart';
 
 var logger = Logger(printer: PrettyPrinter());
@@ -135,7 +136,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
               : null,
     );
 
-    http.Response response;
+    Response response;
     String successMessage;
     String errorMessagePrefix;
 
@@ -143,7 +144,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
       if (_isEditing) {
         successMessage = 'User updated successfully!';
         errorMessagePrefix = 'Failed to update user';
-        response = await http.put(
+        response = await HttpClient.put(
           Uri.parse('${Constants.USERS_API_BASE_URL}/users/${_userToEdit!.id}'),
           headers: headers,
           body: jsonEncode(user.toJson()),
@@ -151,7 +152,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
       } else {
         successMessage = 'User added successfully!';
         errorMessagePrefix = 'Failed to add user';
-        response = await http.post(
+        response = await HttpClient.post(
           Uri.parse('${Constants.USERS_API_BASE_URL}/users'),
           headers: headers,
           body: jsonEncode(user.toJson()),

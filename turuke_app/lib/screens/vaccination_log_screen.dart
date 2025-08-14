@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
@@ -12,6 +11,7 @@ import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/models/vaccination.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/navigation_drawer_screen.dart';
+import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/string_utils.dart';
 import 'package:turuke_app/utils/system_utils.dart';
 import 'package:uuid/uuid.dart';
@@ -69,7 +69,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
     }
 
     try {
-      final flocksRes = await http.get(
+      final flocksRes = await HttpClient.get(
         Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: headers,
       );
@@ -86,7 +86,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
         );
       }
 
-      final vaccinationsRes = await http.get(
+      final vaccinationsRes = await HttpClient.get(
         Uri.parse(
           '${Constants.LAYERS_API_BASE_URL}/vaccinations?farm_id=$farmId',
         ),
@@ -300,9 +300,9 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
     );
 
     try {
-      http.Response response;
+      var response;
       if (vaccinationToEdit != null) {
-        response = await http.patch(
+        response = await HttpClient.patch(
           Uri.parse(
             '${Constants.LAYERS_API_BASE_URL}/vaccinations/${vaccinationToEdit.id}',
           ),
@@ -310,6 +310,8 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
           body: jsonEncode(vaccination.toJson()),
         );
         if (response.statusCode == 200) {
+          if (!mounted) return;
+
           SystemUtils.showSnackBar(
             context,
             'Vaccination updated successfully!',
@@ -319,12 +321,13 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
           throw Exception('Failed to update vaccination: ${response.body}');
         }
       } else {
-        response = await http.post(
+        response = await HttpClient.post(
           Uri.parse('${Constants.LAYERS_API_BASE_URL}/vaccinations'),
           headers: await authProvider.getHeaders(),
           body: jsonEncode(vaccination.toJson()),
         );
         if (response.statusCode == 201) {
+          if (!mounted) return;
           SystemUtils.showSnackBar(context, 'Vaccination added successfully!');
           await _fetchData();
         } else {

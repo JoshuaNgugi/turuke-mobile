@@ -1,13 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/egg_data.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/models/flock_percentage.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
+import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/string_utils.dart';
 import 'package:turuke_app/utils/system_utils.dart';
 
@@ -102,7 +102,7 @@ class HomeProvider with ChangeNotifier {
     String date,
   ) async {
     try {
-      final eggYieldRes = await http.get(
+      final eggYieldRes = await HttpClient.get(
         Uri.parse(
           '${Constants.LAYERS_API_BASE_URL}/stats/egg-yield?farm_id=$farmId&date=$date',
         ),
@@ -129,7 +129,7 @@ class HomeProvider with ChangeNotifier {
     String date,
   ) async {
     try {
-      final flocksRes = await http.get(
+      final flocksRes = await HttpClient.get(
         Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
         headers: headers,
       );
@@ -149,7 +149,7 @@ class HomeProvider with ChangeNotifier {
         throw Exception('Failed to fetch flocks');
       }
 
-      final eggRes = await http.get(
+      final eggRes = await HttpClient.get(
         Uri.parse(
           '${Constants.LAYERS_API_BASE_URL}/egg-production?farm_id=$farmId&collection_date=$date',
         ),
@@ -200,7 +200,7 @@ class HomeProvider with ChangeNotifier {
     String month,
   ) async {
     try {
-      final monthlyYieldRes = await http.get(
+      final monthlyYieldRes = await HttpClient.get(
         Uri.parse(
           '${Constants.LAYERS_API_BASE_URL}/stats/monthly-yield?farm_id=$farmId&month=$month',
         ),
@@ -227,7 +227,7 @@ class HomeProvider with ChangeNotifier {
     Map<String, String> headers,
   ) async {
     try {
-      final chickenStatusRes = await http.get(
+      final chickenStatusRes = await HttpClient.get(
         Uri.parse(
           '${Constants.LAYERS_API_BASE_URL}/stats/chicken-status?farm_id=$farmId',
         ),

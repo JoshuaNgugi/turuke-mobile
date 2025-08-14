@@ -1,17 +1,17 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:logger/logger.dart'; // Add logger for better error reporting
+import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
-import 'package:turuke_app/datasources/users_datasource.dart'; // Keep this import
+import 'package:turuke_app/datasources/users_datasource.dart';
 import 'package:turuke_app/models/user.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/add_user_screen.dart';
-import 'package:turuke_app/screens/login_screen.dart'; // Potentially navigate here on auth error
+import 'package:turuke_app/screens/login_screen.dart';
 import 'package:turuke_app/screens/navigation_drawer_screen.dart';
-import 'package:turuke_app/utils/system_utils.dart'; // For SnackBar messages
+import 'package:turuke_app/utils/http_client.dart';
+import 'package:turuke_app/utils/system_utils.dart';
 
 var logger = Logger(printer: PrettyPrinter());
 
@@ -64,12 +64,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     }
 
     try {
-      final response = await http.get(
+      final response = await HttpClient.get(
         Uri.parse('${Constants.USERS_API_BASE_URL}/users?farm_id=$farmId'),
         headers: headers,
       );
 
-      if (!mounted) return; // Check mounted after async call
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         List<dynamic> usersData = jsonDecode(response.body);
@@ -89,7 +89,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           );
         }
       } else {
-        // Log the full response body for debugging
         logger.e(
           'Failed to fetch users: ${response.statusCode} - ${response.body}',
         );
@@ -98,7 +97,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           'Failed to load users: ${response.statusCode}',
         );
         setState(() {
-          _users = []; // Clear users on error
+          _users = [];
         });
       }
     } catch (e) {
@@ -109,7 +108,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           'Network error. Could not load users.',
         );
         setState(() {
-          _users = []; // Clear users on error
+          _users = [];
         });
       }
     } finally {
@@ -124,17 +123,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       _fetchUsers();
     });
   }
-
-  // void _onRouteSelected(String route, [Object? args]) async {
-  //   if (ModalRoute.of(context)?.settings.name != route) {
-  //     final result = await Navigator.pushNamed(context, route, arguments: args);
-  //     if (result == true) {
-  //       _fetchUsers();
-  //     }
-  //   } else {
-  //     Navigator.pop(context);
-  //   }
-  // }
 
   @override
   Widget build(BuildContext context) {

@@ -1,13 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
+import 'package:turuke_app/utils/http_client.dart';
 
 var logger = Logger();
 
@@ -94,7 +94,7 @@ Future<void> syncPendingData(BuildContext context, Database db) async {
       final entries = await db.query(tableName);
       for (var entry in entries) {
         try {
-          final response = await http.post(
+          final response = await HttpClient.post(
             Uri.parse('${Constants.API_BASE_URL}/$apiEndpoint'),
             headers: headers,
             body: jsonEncode(getBody(entry)),
@@ -200,7 +200,7 @@ Future<void> syncPendingData(BuildContext context, Database db) async {
   final pendingUsers = await db.query('users_pending');
   for (var user in pendingUsers) {
     try {
-      final response = await http.post(
+      final response = await HttpClient.post(
         Uri.parse('${Constants.API_BASE_URL}/users'),
         headers: headers,
         body: jsonEncode({
