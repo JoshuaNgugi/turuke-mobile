@@ -1,18 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
-import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/screens/login_screen.dart';
 import 'package:logger/logger.dart';
 
 var logger = Logger();
 
 class HttpClient {
-
   static Future<http.Response> get(
-    BuildContext context,
     Uri uri, {
     Map<String, String>? headers,
   }) async {
@@ -27,16 +21,14 @@ class HttpClient {
               );
             },
           );
-
-      _handleResponse(context, response);
       return response;
     } catch (e) {
-      throw Exception('Network error during GET request to $uri: $e');
+      logger.e('Network error during GET request to $uri: $e');
+      throw Exception('Network error during GET request');
     }
   }
 
   static Future<http.Response> post(
-    BuildContext context,
     Uri uri, {
     Map<String, String>? headers,
     Object? body,
@@ -52,15 +44,14 @@ class HttpClient {
               );
             },
           );
-      _handleResponse(context, response);
       return response;
     } catch (e) {
-      throw Exception('Network error during POST request to $uri: $e');
+      logger.e('Network error during POST request to $uri: $e');
+      throw Exception('Network error during POST request');
     }
   }
 
   static Future<http.Response> patch(
-    BuildContext context,
     Uri uri, {
     Map<String, String>? headers,
     Object? body,
@@ -76,42 +67,10 @@ class HttpClient {
               );
             },
           );
-      _handleResponse(context, response);
       return response;
     } catch (e) {
-      throw Exception('Network error during PATCH request to $uri: $e');
-    }
-  }
-
-  static void _handleResponse(BuildContext context, http.Response response) {
-    if (!context.mounted) {
-      return;
-    }
-
-    if (response.statusCode == 401) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-      authProvider
-          .logout()
-          .then((_) {
-            if (context.mounted) {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                LoginScreen.routeName,
-                (route) => false,
-              );
-            }
-          })
-          .catchError((error) {
-            logger.e('Error during logout on 401: $error');
-            if (context.mounted) {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                LoginScreen.routeName,
-                (route) => false,
-              );
-            }
-          });
+      logger.e('Network error during PATCH request to $uri: $e');
+      throw Exception('Network error during PATCH request');
     }
   }
 }

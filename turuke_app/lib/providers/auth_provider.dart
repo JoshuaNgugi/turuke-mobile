@@ -33,10 +33,9 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> register(BuildContext context, {required User user}) async {
+  Future<void> register({required User user}) async {
     try {
       final response = await HttpClient.post(
-        context,
         Uri.parse('${Constants.API_BASE_URL}/auth/register'),
         headers: {'Content-Type': 'application/json'},
         body: user.toJson(),
@@ -66,13 +65,11 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> login(
-    BuildContext context,
     String email,
     String password,
   ) async {
     try {
       final response = await HttpClient.post(
-        context,
         Uri.parse('${Constants.API_BASE_URL}/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),

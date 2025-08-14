@@ -43,7 +43,6 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // Use the updated AuthProvider.login method that takes context
       await context.read<AuthProvider>().login(
-        context, // Pass context to AuthProvider's login
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
@@ -262,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                           const SizedBox(height: 16),
-                          Row(
+                          Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Text(

@@ -95,7 +95,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         role: UserRole.ADMIN,
       );
 
-      await context.read<AuthProvider>().register(context, user: newUser);
+      await context.read<AuthProvider>().register(user: newUser);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
