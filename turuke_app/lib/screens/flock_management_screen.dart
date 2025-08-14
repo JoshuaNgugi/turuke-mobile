@@ -553,7 +553,6 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                                                 Icons.arrow_forward_ios,
                                                 color: Colors.grey,
                                               ),
-                                      // --- END UPDATED SECTION ---
                                       onTap:
                                           canModifyFlock
                                               ? () => _showAddEditFlockDialog(
@@ -565,6 +564,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                                 },
                               ),
                     ),
+                    Padding(padding: EdgeInsetsGeometry.only(bottom: 100)),
                   ],
                 ),
       ),
