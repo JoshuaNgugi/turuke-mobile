@@ -475,6 +475,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                                 },
                               ),
                     ),
+                    const Padding(padding: EdgeInsets.only(bottom: 100)),
                   ],
                 ),
       ),

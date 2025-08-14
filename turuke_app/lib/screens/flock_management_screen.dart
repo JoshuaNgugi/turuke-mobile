@@ -564,7 +564,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                                 },
                               ),
                     ),
-                    Padding(padding: EdgeInsetsGeometry.only(bottom: 100)),
+                    const Padding(padding: EdgeInsets.only(bottom: 100)),
                   ],
                 ),
       ),

@@ -249,7 +249,6 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Pass EggData directly as argument to _onRouteSelected
     final dataSource = EggCollectionDataSource(
       eggCollections: _eggCollections,
       onSelect:

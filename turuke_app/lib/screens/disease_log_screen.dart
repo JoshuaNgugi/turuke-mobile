@@ -475,6 +475,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                                 },
                               ),
                     ),
+                    const Padding(padding: EdgeInsets.only(bottom: 100)),
                   ],
                 ),
       ),
