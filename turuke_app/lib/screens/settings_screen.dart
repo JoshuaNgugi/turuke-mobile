@@ -47,28 +47,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _launchURL(String urlString) async {
     final Uri url = Uri.parse(urlString);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
-        SystemUtils.showSnackBar(context, 'Could not open $urlString');
-      }
+    if (!await launchUrl(url)) {
+      if (!mounted) return;
+      SystemUtils.showSnackBar(context, 'Could not open $urlString');
     }
   }
 
   Future<void> _sendEmail() async {
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
-      path: 'support@turuke.co.ke', // Replace with your support email
-      queryParameters: {
-        'subject': 'Support Request for Turuke App v$_appVersion',
-        'body': 'Dear Support Team,\n\n',
-      },
+      path: 'support@turuke.co.ke',
+      query: Uri.encodeFull( // encode spaces as %20 instead of +
+        'subject=Support Request for Turuke App v$_appVersion'
+        '&body=Dear Support Team,\n\n',
+      ),
     );
 
-    if (await canLaunchUrl(emailLaunchUri)) {
-      await launchUrl(emailLaunchUri);
-    } else {
+    if (!await launchUrl(emailLaunchUri)) {
       if (mounted) {
         SystemUtils.showSnackBar(context, 'Could not open email client.');
       }

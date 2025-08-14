@@ -46,7 +46,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   Future<void> _launchURL() async {
     final Uri url = Uri.parse(Constants.TERMS_OF_SERVICE_URL);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      // Use externalApplication for browser
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -375,8 +374,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                       ),
                                       recognizer:
                                           _tapGestureRecognizer
-                                            ..onTap =
-                                                _launchURL, // Call your method
+                                            ..onTap = _launchURL,
                                     ),
                                   ],
                                 ),
