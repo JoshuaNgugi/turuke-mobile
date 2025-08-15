@@ -66,12 +66,25 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
     final userId = authProvider.user?.id;
+    final farmId = authProvider.user?.farmId;
 
     if (userId == null) {
       if (mounted) {
         SystemUtils.showSnackBar(
           context,
-          'User ID not found. Please log in again.',
+          'User ID not found. Please log out and log in again.',
+        );
+        await authProvider.logout();
+        Navigator.pushReplacementNamed(context, LoginScreen.routeName);
+      }
+      return;
+    }
+
+    if (farmId == null) {
+      if (mounted) {
+        SystemUtils.showSnackBar(
+          context,
+          'Farm ID not found. Please log out and log in again.',
         );
         await authProvider.logout();
         Navigator.pushReplacementNamed(context, LoginScreen.routeName);
@@ -88,6 +101,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         headers: headers,
         body: jsonEncode({
           'user_id': userId,
+          'farm_id': farmId,
           'current_password': currentPassword,
           'new_password': newPassword,
         }),
@@ -102,10 +116,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         if (mounted) {
           Navigator.pushReplacementNamed(context, LoginScreen.routeName);
         }
-      } else if (response.statusCode == 401) {
+      } else if (response.statusCode == 400) {
         SystemUtils.showSnackBar(
           context,
           'Incorrect current password. Please try again.',
+        );
+      } else if (response.statusCode == 404) {
+        SystemUtils.showSnackBar(
+          context,
+          'Change password failed: User not found.',
         );
       } else {
         String errorMessage = 'Failed to change password. Please try again.';

@@ -52,15 +52,7 @@ class HomeProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final tokenExpiresAt = _authProvider.tokenExpiresAt;
-    final token = _authProvider.token;
-
-    DateTime? expiresAt = DateTime.tryParse(tokenExpiresAt ?? '');
-
-    if (expiresAt == null ||
-        token == null ||
-        DateTime.now().isAfter(expiresAt)) {
-      await _authProvider.logout();
+    if (_authProvider.isTokenExpired) {
       _status = HomeDataStatus.error;
       _errorMessage = 'Session expired. Please log in again.';
       notifyListeners();
