@@ -59,7 +59,7 @@ class AuthProvider with ChangeNotifier {
         value: data['refreshToken'],
       );
 
-      // Store access token in prefs for quick startup use (optional)
+      // Store access token in prefs for quick startup use
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('access_token', _accessToken!);
       await prefs.setString(
@@ -139,6 +139,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   // ===== GET HEADERS =====
+  // Every API call will refresh the token if expired before making the request
   Future<Map<String, String>> getHeaders() async {
     if (isTokenExpired) {
       final refreshed = await refreshAccessToken();

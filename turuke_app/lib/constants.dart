@@ -10,10 +10,10 @@ class Constants {
 
   static const String USERS_API_BASE_URL = '$API_BASE_URL/users';
 
-  static const String TERMS_OF_SERVICE_URL = 'https://www.turuke.co.ke/terms';
+  static const String TERMS_OF_SERVICE_URL = 'https://www.turuke.co.ke/terms.html';
 
   static const String PRIVACY_POLICY =
-      'https://www.turuke.co.ke/privacy-policy';
+      'https://www.turuke.co.ke/privacy-policy.html';
 
   // Primary color for main branding
   static const Color kPrimaryColor = Color.fromARGB(255, 103, 2, 121);
