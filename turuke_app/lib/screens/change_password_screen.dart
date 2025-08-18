@@ -65,43 +65,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final headers = await authProvider.getHeaders();
-    final userId = authProvider.user?.id;
-    final farmId = authProvider.user?.farmId;
-
-    if (userId == null) {
-      if (mounted) {
-        SystemUtils.showSnackBar(
-          context,
-          'User ID not found. Please log out and log in again.',
-        );
-        await authProvider.logout();
-        Navigator.pushReplacementNamed(context, LoginScreen.routeName);
-      }
-      return;
-    }
-
-    if (farmId == null) {
-      if (mounted) {
-        SystemUtils.showSnackBar(
-          context,
-          'Farm ID not found. Please log out and log in again.',
-        );
-        await authProvider.logout();
-        Navigator.pushReplacementNamed(context, LoginScreen.routeName);
-      }
-      return;
-    }
 
     final String currentPassword = _currentPasswordController.text;
     final String newPassword = _newPasswordController.text;
 
     try {
-      final response = await HttpClient.post(
+      final response = await HttpClient.patch(
         Uri.parse('${Constants.USERS_API_BASE_URL}/change-password'),
         headers: headers,
         body: jsonEncode({
-          'user_id': userId,
-          'farm_id': farmId,
           'current_password': currentPassword,
           'new_password': newPassword,
         }),
