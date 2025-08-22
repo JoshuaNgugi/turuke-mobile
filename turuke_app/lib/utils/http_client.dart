@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
@@ -34,6 +35,13 @@ class HttpClient {
     Object? body,
   }) async {
     try {
+      // Auto-encode if JSON header is set and body is a Map
+      if (headers != null &&
+          headers["Content-Type"] == "application/json" &&
+          body is Map) {
+        body = jsonEncode(body);
+      }
+
       final response = await http
           .post(uri, headers: headers, body: body)
           .timeout(
@@ -57,6 +65,12 @@ class HttpClient {
     Object? body,
   }) async {
     try {
+      if (headers != null &&
+          headers["Content-Type"] == "application/json" &&
+          body is Map) {
+        body = jsonEncode(body);
+      }
+
       final response = await http
           .patch(uri, headers: headers, body: body)
           .timeout(
@@ -80,6 +94,12 @@ class HttpClient {
     Object? body,
   }) async {
     try {
+      if (headers != null &&
+          headers["Content-Type"] == "application/json" &&
+          body is Map) {
+        body = jsonEncode(body);
+      }
+
       final response = await http
           .put(uri, headers: headers, body: body)
           .timeout(
@@ -103,6 +123,12 @@ class HttpClient {
     Object? body,
   }) async {
     try {
+      if (headers != null &&
+          headers["Content-Type"] == "application/json" &&
+          body is Map) {
+        body = jsonEncode(body);
+      }
+
       final response = await http
           .delete(uri, headers: headers, body: body)
           .timeout(
