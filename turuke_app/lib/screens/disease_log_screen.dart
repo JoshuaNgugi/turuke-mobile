@@ -482,7 +482,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed:
             _flocks.isEmpty
-                ? null
+                ? () => SystemUtils.showEmptyFlocksWarning(context)
                 : () => _showAddEditDiseaseDialog(diseaseToEdit: null),
         backgroundColor: Constants.kPrimaryColor,
         foregroundColor: Colors.white,

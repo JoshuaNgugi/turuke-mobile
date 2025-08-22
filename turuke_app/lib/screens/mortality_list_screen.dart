@@ -28,6 +28,7 @@ class _MortalityListScreenState extends State<MortalityListScreen> {
   final int _rowsPerPage = 10;
 
   List<Mortality> _mortalityList = [];
+  List<Flock> _flocks = [];
 
   @override
   void initState() {
@@ -62,7 +63,8 @@ class _MortalityListScreenState extends State<MortalityListScreen> {
       if (flocksRes.statusCode == 200) {
         jsonDecode(flocksRes.body);
         if (mounted) {
-          setState(() {});
+          final List<dynamic> jsonList = jsonDecode(flocksRes.body);
+          _flocks = jsonList.map((json) => Flock.fromJson(json)).toList();
         }
       } else {
         logger.w(
@@ -204,7 +206,10 @@ class _MortalityListScreenState extends State<MortalityListScreen> {
                 ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _onRouteSelected(AddEditMortalityScreen.routeName),
+        onPressed:
+            _flocks.isEmpty
+                ? () => SystemUtils.showEmptyFlocksWarning(context)
+                : () => _onRouteSelected(AddEditMortalityScreen.routeName),
         tooltip: 'Record Mortality',
         backgroundColor: Constants.kPrimaryColor,
         foregroundColor: Colors.white,

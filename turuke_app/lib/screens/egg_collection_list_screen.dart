@@ -64,6 +64,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
           _flocksForDropdown = [_createAllFlocksOption()];
         });
       }
+      if (!mounted) return;
       SystemUtils.showSnackBar(
         context,
         'Error: Farm ID not found. Please re-login.',
@@ -289,11 +290,10 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed:
-            _flocksForDropdown.isEmpty
-                ? null
-                : () => _onRouteSelected(
-                  EggCollectionScreen.routeName,
-                ), // No argument for new entry
+            _flocksForDropdown.length <=
+                    1 // Only "All Flocks" option available
+                ? () => SystemUtils.showEmptyFlocksWarning(context)
+                : () => _onRouteSelected(EggCollectionScreen.routeName),
         tooltip: 'Add Egg Collection',
         backgroundColor: Constants.kPrimaryColor,
         foregroundColor: Colors.white,

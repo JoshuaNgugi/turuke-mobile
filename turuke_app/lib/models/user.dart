@@ -39,6 +39,7 @@ class User {
       'last_name': lastName,
       'email': email,
       'farm_id': farmId,
+      'farm_name': farmName,
       'role': role,
       'status': status,
     };

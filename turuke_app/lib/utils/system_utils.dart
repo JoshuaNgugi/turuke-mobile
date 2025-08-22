@@ -47,4 +47,11 @@ class SystemUtils {
       ),
     );
   }
+
+  static void showEmptyFlocksWarning(BuildContext context) {
+    SystemUtils.showSnackBar(
+      context,
+      'No flocks available. Please add a flock before adding record.',
+    );
+  }
 }

@@ -390,7 +390,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                                 child: Padding(
                                   padding: EdgeInsets.all(16.0),
                                   child: Text(
-                                    'No vaccination records found. Tap the + button to add one.',
+                                    'No vaccination records found. Add a flock then tap the + button to add one.',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 16,
@@ -480,11 +480,10 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                 ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed:
-            _flocks
-                    .isEmpty // Disable FAB if no flocks available to link
-                ? null
-                : () => _showAddEditVaccinationDialog(vaccinationToEdit: null),
+        onPressed: _flocks.isEmpty
+            // Disable FAB if no flocks available to link
+            ? () => SystemUtils.showEmptyFlocksWarning(context)
+            : () => _showAddEditVaccinationDialog(vaccinationToEdit: null),
         backgroundColor: Constants.kPrimaryColor,
         foregroundColor: Colors.white,
         tooltip: 'Add Vaccination Log',

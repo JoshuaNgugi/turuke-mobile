@@ -338,6 +338,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
           body: jsonEncode(flock.toJson()),
         );
         if (response.statusCode == 201) {
+          if (!mounted) return;
           SystemUtils.showSnackBar(context, 'Flock added successfully!');
           await _fetchFlocks();
         } else {
@@ -346,6 +347,12 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
       }
     } catch (e) {
       logger.e('Error saving/updating flock online: $e.');
+      if (mounted) {
+        SystemUtils.showSnackBar(
+          context,
+          'Failed to save flock. Please try again.',
+        );
+      }
     }
   }
 
