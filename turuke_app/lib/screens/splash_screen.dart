@@ -34,6 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
       final db = await initDatabase();
 
+      if (!mounted) return;
       await syncPendingData(context, db);
     } catch (e) {
       logger.e('Error during app initialization/sync: $e');

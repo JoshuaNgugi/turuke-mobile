@@ -206,6 +206,7 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
     if (_db == null) {
       await _initDb();
       if (_db == null) {
+        if (!mounted) return;
         SystemUtils.showSnackBar(context, 'Database not ready. Cannot save.');
         return;
       }
@@ -217,6 +218,7 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
       'whole_eggs': _wholeEggs,
       'broken_eggs': _brokenEggs,
     };
+    if (!mounted) return;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {

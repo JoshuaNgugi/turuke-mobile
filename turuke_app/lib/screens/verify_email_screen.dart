@@ -12,9 +12,7 @@ class VerifyEmailScreen extends StatefulWidget {
 
 class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   String _code = '';
-  bool _isOnline = true;
-  bool _isLoading = false;
-  String? _error;
+  final bool _isOnline = true;
 
   @override
   void initState() {
@@ -22,9 +20,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     _checkConnectivity();
   }
 
-  Future<void> _checkConnectivity() async {
-    // TODO
-  }
+  Future<void> _checkConnectivity() async {}
 
   Future<void> _verify() async {
     if (_code.length == 6 && _isOnline) {

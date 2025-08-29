@@ -1,11 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
-import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
@@ -13,7 +12,6 @@ import 'package:turuke_app/screens/navigation_drawer_screen.dart';
 import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/string_utils.dart';
 import 'package:turuke_app/utils/system_utils.dart';
-import 'package:uuid/uuid.dart';
 
 var logger = Logger(printer: PrettyPrinter());
 
@@ -100,23 +98,23 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
 
   Future<void> _showAddEditFlockDialog({Flock? flockToEdit}) async {
     final formKey = GlobalKey<FormState>();
-    String _flockName = flockToEdit?.name ?? '';
-    int _initialCount = flockToEdit?.initialCount ?? 0;
-    int _currentCount = flockToEdit?.currentCount ?? 0;
-    DateTime _arrivalDate =
+    String flockName = flockToEdit?.name ?? '';
+    int initialCount = flockToEdit?.initialCount ?? 0;
+    int currentCount = flockToEdit?.currentCount ?? 0;
+    DateTime arrivalDate =
         flockToEdit != null
             ? _dateFormat.parse(flockToEdit.arrivalDate)
             : DateTime.now();
-    int _status = flockToEdit?.status ?? 1;
+    int status = flockToEdit?.status ?? 1;
 
     final TextEditingController nameController = TextEditingController(
-      text: _flockName,
+      text: flockName,
     );
     final TextEditingController initialCountController = TextEditingController(
-      text: _initialCount.toString(),
+      text: initialCount.toString(),
     );
     final TextEditingController currentCountController = TextEditingController(
-      text: _currentCount.toString(),
+      text: currentCount.toString(),
     );
 
     try {
@@ -139,7 +137,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                             validator:
                                 (value) =>
                                     value!.isEmpty ? 'Name is required' : null,
-                            onChanged: (value) => _flockName = value,
+                            onChanged: (value) => flockName = value,
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
@@ -148,7 +146,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                             onTap: () async {
                               final picked = await showDatePicker(
                                 context: context,
-                                initialDate: _arrivalDate,
+                                initialDate: arrivalDate,
                                 firstDate: DateTime(2020),
                                 lastDate: DateTime.now(),
                                 builder: (context, child) {
@@ -172,12 +170,12 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                               );
                               if (picked != null && context.mounted) {
                                 setStateInDialog(() {
-                                  _arrivalDate = picked;
+                                  arrivalDate = picked;
                                 });
                               }
                             },
                             controller: TextEditingController(
-                              text: _dateFormat.format(_arrivalDate),
+                              text: _dateFormat.format(arrivalDate),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -190,14 +188,14 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                                 return 'Required';
                               }
                               if (int.tryParse(value) == null ||
-                                  int.parse(value)! < 0) {
+                                  int.parse(value) < 0) {
                                 return 'Enter valid number';
                               }
                               return null;
                             },
                             onChanged:
                                 (value) =>
-                                    _initialCount = int.tryParse(value) ?? 0,
+                                    initialCount = int.tryParse(value) ?? 0,
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
@@ -216,12 +214,12 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                             },
                             onChanged:
                                 (value) =>
-                                    _currentCount = int.tryParse(value) ?? 0,
+                                    currentCount = int.tryParse(value) ?? 0,
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<int>(
                             decoration: _inputDecoration('Status'),
-                            value: _status,
+                            value: status,
                             items: const [
                               DropdownMenuItem(value: 1, child: Text('Active')),
                               DropdownMenuItem(
@@ -232,7 +230,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                             onChanged: (newValue) {
                               if (newValue != null) {
                                 setStateInDialog(() {
-                                  _status = newValue;
+                                  status = newValue;
                                 });
                               }
                             },
@@ -274,11 +272,11 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
 
       if (result == true) {
         await _saveFlock(
-          flockName: _flockName,
-          initialCount: _initialCount,
-          currentCount: _currentCount,
-          arrivalDate: _arrivalDate,
-          status: _status,
+          flockName: flockName,
+          initialCount: initialCount,
+          currentCount: currentCount,
+          arrivalDate: arrivalDate,
+          status: status,
           flockId:
               (flockToEdit != null && flockToEdit.id != null)
                   ? flockToEdit.id
@@ -318,7 +316,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
     );
 
     try {
-      var response;
+      Response response;
       if (flockId != null) {
         response = await HttpClient.patch(
           Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks/$flockId'),
@@ -326,6 +324,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
           body: jsonEncode(flock.toJson()),
         );
         if (response.statusCode == 200) {
+          if (!mounted) return;
           SystemUtils.showSnackBar(context, 'Flock updated successfully!');
           await _fetchFlocks();
         } else {

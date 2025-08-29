@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/screens/change_password_screen.dart';
 import 'package:turuke_app/screens/disease_log_screen.dart';
 import 'package:turuke_app/screens/egg_collection_list_screen.dart';
 import 'package:turuke_app/screens/flock_management_screen.dart';
@@ -17,10 +16,10 @@ class AppNavigationDrawer extends StatelessWidget {
   final Function(String) onRouteSelected;
 
   const AppNavigationDrawer({
-    Key? key,
+    super.key,
     required this.selectedRoute,
     required this.onRouteSelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

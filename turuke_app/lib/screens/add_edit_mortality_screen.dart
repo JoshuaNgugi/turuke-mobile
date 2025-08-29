@@ -152,6 +152,7 @@ class _AddEditMortalityScreenState extends State<AddEditMortalityScreen> {
     final farmId = authProvider.user?.farmId;
 
     if (farmId == null) {
+      if (!mounted) return;
       SystemUtils.showSnackBar(context, 'Farm ID not available. Cannot save.');
       return;
     }

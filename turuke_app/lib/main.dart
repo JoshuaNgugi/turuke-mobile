@@ -42,10 +42,10 @@ class TurukeApp extends StatefulWidget {
   const TurukeApp({super.key});
 
   @override
-  _TurukeAppState createState() => _TurukeAppState();
+  TurukeAppState createState() => TurukeAppState();
 }
 
-class _TurukeAppState extends State<TurukeApp> {
+class TurukeAppState extends State<TurukeApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

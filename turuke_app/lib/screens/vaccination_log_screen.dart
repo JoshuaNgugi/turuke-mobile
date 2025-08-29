@@ -1,11 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
-import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/models/vaccination.dart';
@@ -14,7 +13,6 @@ import 'package:turuke_app/screens/navigation_drawer_screen.dart';
 import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/string_utils.dart';
 import 'package:turuke_app/utils/system_utils.dart';
-import 'package:uuid/uuid.dart';
 
 var logger = Logger(printer: PrettyPrinter());
 
@@ -118,21 +116,21 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
   Future<void> _showAddEditVaccinationDialog({
     Vaccination? vaccinationToEdit,
   }) async {
-    final _formKey = GlobalKey<FormState>();
+    final formKey = GlobalKey<FormState>();
 
-    int? _flockId = vaccinationToEdit?.flockId;
-    DateTime _vaccinationDate =
+    int? flockId = vaccinationToEdit?.flockId;
+    DateTime vaccinationDate =
         vaccinationToEdit != null
             ? _dateFormat.parse(vaccinationToEdit.vaccinationDate)
             : DateTime.now();
 
-    String _vaccineName = vaccinationToEdit?.name ?? '';
-    String _notes = vaccinationToEdit?.notes ?? '';
+    String vaccineName = vaccinationToEdit?.name ?? '';
+    String notes = vaccinationToEdit?.notes ?? '';
 
-    final vaccineNameController = TextEditingController(text: _vaccineName);
-    final notesController = TextEditingController(text: _notes);
+    final vaccineNameController = TextEditingController(text: vaccineName);
+    final notesController = TextEditingController(text: notes);
     final vaccinationDateController = TextEditingController(
-      text: _dateFormat.format(_vaccinationDate),
+      text: _dateFormat.format(vaccinationDate),
     );
 
     try {
@@ -148,14 +146,14 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                       : 'Add Vaccination',
                 ),
                 content: Form(
-                  key: _formKey,
+                  key: formKey,
                   child: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         DropdownButtonFormField<int>(
                           decoration: _inputDecoration('Select Flock'),
-                          value: _flockId,
+                          value: flockId,
                           items:
                               _flocks.map<DropdownMenuItem<int>>((flock) {
                                 return DropdownMenuItem<int>(
@@ -165,7 +163,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                               }).toList(),
                           onChanged: (value) {
                             setStateInDialog(() {
-                              _flockId = value;
+                              flockId = value;
                             });
                           },
                           validator:
@@ -181,7 +179,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                                   value!.isEmpty
                                       ? 'Vaccine Name is required'
                                       : null,
-                          onChanged: (value) => _vaccineName = value,
+                          onChanged: (value) => vaccineName = value,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -191,7 +189,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                           onTap: () async {
                             final picked = await showDatePicker(
                               context: context,
-                              initialDate: _vaccinationDate,
+                              initialDate: vaccinationDate,
                               firstDate: DateTime(2020),
                               lastDate: DateTime.now(),
                               builder: (context, child) {
@@ -215,7 +213,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                             );
                             if (picked != null) {
                               setStateInDialog(() {
-                                _vaccinationDate = picked;
+                                vaccinationDate = picked;
                                 vaccinationDateController.text = _dateFormat
                                     .format(picked); // ✅ update text
                               });
@@ -227,7 +225,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                           controller: notesController,
                           decoration: _inputDecoration('Notes (Optional)'),
                           maxLines: 3,
-                          onChanged: (value) => _notes = value,
+                          onChanged: (value) => notes = value,
                         ),
                       ],
                     ),
@@ -243,8 +241,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      if (_formKey.currentState!.validate() &&
-                          _flockId != null) {
+                      if (formKey.currentState!.validate() && flockId != null) {
                         Navigator.pop(context, true);
                       }
                     },
@@ -264,10 +261,10 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
       if (result == true) {
         await _saveVaccination(
           vaccinationToEdit: vaccinationToEdit,
-          flockId: _flockId!,
-          name: _vaccineName,
-          date: _vaccinationDate,
-          notes: _notes,
+          flockId: flockId!,
+          name: vaccineName,
+          date: vaccinationDate,
+          notes: notes,
         );
       }
     } finally {
@@ -300,7 +297,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
     );
 
     try {
-      var response;
+      Response response;
       if (vaccinationToEdit != null) {
         response = await HttpClient.patch(
           Uri.parse(
@@ -480,10 +477,11 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
                 ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _flocks.isEmpty
-            // Disable FAB if no flocks available to link
-            ? () => SystemUtils.showEmptyFlocksWarning(context)
-            : () => _showAddEditVaccinationDialog(vaccinationToEdit: null),
+        onPressed:
+            _flocks.isEmpty
+                // Disable FAB if no flocks available to link
+                ? () => SystemUtils.showEmptyFlocksWarning(context)
+                : () => _showAddEditVaccinationDialog(vaccinationToEdit: null),
         backgroundColor: Constants.kPrimaryColor,
         foregroundColor: Colors.white,
         tooltip: 'Add Vaccination Log',

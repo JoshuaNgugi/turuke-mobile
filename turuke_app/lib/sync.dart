@@ -85,7 +85,7 @@ Future<void> syncPendingData(BuildContext context, Database db) async {
     return;
   }
 
-  Future<void> _syncTable(
+  Future<void> syncTable(
     String tableName,
     String apiEndpoint,
     Function(Map<String, dynamic>) getBody,
@@ -122,7 +122,7 @@ Future<void> syncPendingData(BuildContext context, Database db) async {
 
   logger.i('Starting data synchronization...');
 
-  await _syncTable(
+  await syncTable(
     'egg_pending',
     'egg-production',
     (entry) => {
@@ -133,7 +133,7 @@ Future<void> syncPendingData(BuildContext context, Database db) async {
     },
   );
 
-  await _syncTable(
+  await syncTable(
     'flock_pending',
     'flocks',
     (entry) => {
@@ -147,7 +147,7 @@ Future<void> syncPendingData(BuildContext context, Database db) async {
     },
   );
 
-  await _syncTable(
+  await syncTable(
     'vaccination_pending',
     'vaccinations',
     (entry) => {
@@ -158,7 +158,7 @@ Future<void> syncPendingData(BuildContext context, Database db) async {
     },
   );
 
-  await _syncTable(
+  await syncTable(
     'disease_pending',
     'diseases',
     (entry) => {
@@ -170,7 +170,7 @@ Future<void> syncPendingData(BuildContext context, Database db) async {
     },
   );
 
-  await _syncTable(
+  await syncTable(
     'mortality_pending',
     'mortalities',
     (entry) => {
@@ -181,7 +181,7 @@ Future<void> syncPendingData(BuildContext context, Database db) async {
     },
   );
 
-  await _syncTable(
+  await syncTable(
     'users_pending',
     'users',
     (user) => {

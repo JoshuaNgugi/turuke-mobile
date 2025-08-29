@@ -41,6 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _appVersion = 'N/A';
         });
       }
+      if (!mounted) return;
       SystemUtils.showSnackBar(context, 'Failed to get app version.');
     }
   }

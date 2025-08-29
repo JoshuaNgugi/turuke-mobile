@@ -122,15 +122,15 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
   }
 
   Future<void> _showAddEditDiseaseDialog({Disease? diseaseToEdit}) async {
-    final _formKey = GlobalKey<FormState>();
-    int? _flockId = diseaseToEdit?.flockId;
-    String _diseaseName = diseaseToEdit?.name ?? '';
-    DateTime _diagnosisDate =
+    final formKey = GlobalKey<FormState>();
+    int? flockId = diseaseToEdit?.flockId;
+    String diseaseName = diseaseToEdit?.name ?? '';
+    DateTime diagnosisDate =
         diseaseToEdit != null
             ? _dateFormat.parse(diseaseToEdit.diagnosisDate)
             : DateTime.now();
-    int _affectedCount = diseaseToEdit?.affectedCount ?? 0;
-    String _notes = diseaseToEdit?.notes ?? '';
+    int affectedCount = diseaseToEdit?.affectedCount ?? 0;
+    String notes = diseaseToEdit?.notes ?? '';
 
     final result = await showDialog<bool>(
       context: context,
@@ -142,14 +142,14 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                 diseaseToEdit != null ? 'Edit Disease' : 'Add Disease',
               ),
               content: Form(
-                key: _formKey,
+                key: formKey,
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       DropdownButtonFormField<int>(
                         decoration: _inputDecoration('Select Flock'),
-                        value: _flockId,
+                        value: flockId,
                         items:
                             _flocks
                                 .map<DropdownMenuItem<int>>(
@@ -161,7 +161,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                                 .toList(),
                         onChanged: (value) {
                           setStateInDialog(() {
-                            _flockId = value;
+                            flockId = value;
                           });
                         },
                         validator:
@@ -176,19 +176,19 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                                 value!.isEmpty
                                     ? 'Disease Name is required'
                                     : null,
-                        onChanged: (value) => _diseaseName = value,
+                        onChanged: (value) => diseaseName = value,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: TextEditingController(
-                          text: _dateFormat.format(_diagnosisDate),
+                          text: _dateFormat.format(diagnosisDate),
                         ),
                         decoration: _inputDecoration('Diagnosis Date'),
                         readOnly: true,
                         onTap: () async {
                           final picked = await showDatePicker(
                             context: context,
-                            initialDate: _diagnosisDate,
+                            initialDate: diagnosisDate,
                             firstDate: DateTime(2020),
                             lastDate: DateTime.now(),
                             builder: (context, child) {
@@ -211,7 +211,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                           );
                           if (picked != null) {
                             setStateInDialog(() {
-                              _diagnosisDate = picked;
+                              diagnosisDate = picked;
                             });
                           }
                         },
@@ -233,14 +233,13 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                           return null;
                         },
                         onChanged:
-                            (value) =>
-                                _affectedCount = int.tryParse(value) ?? 0,
+                            (value) => affectedCount = int.tryParse(value) ?? 0,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
                         decoration: _inputDecoration('Notes (Optional)'),
                         maxLines: 3,
-                        onChanged: (value) => _notes = value,
+                        onChanged: (value) => notes = value,
                       ),
                     ],
                   ),
@@ -256,7 +255,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (_formKey.currentState!.validate() && _flockId != null) {
+                    if (formKey.currentState!.validate() && flockId != null) {
                       Navigator.pop(context, true);
                     }
                   },
@@ -274,6 +273,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
     );
 
     if (result == true) {
+      if (!mounted) return;
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final farmId = authProvider.user?.farmId;
 
@@ -286,11 +286,11 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
       }
 
       Disease disease = Disease(
-        flockId: _flockId!,
-        name: _diseaseName,
-        diagnosisDate: _dateFormat.format(_diagnosisDate),
-        affectedCount: _affectedCount,
-        notes: _notes,
+        flockId: flockId!,
+        name: diseaseName,
+        diagnosisDate: _dateFormat.format(diagnosisDate),
+        affectedCount: affectedCount,
+        notes: notes,
       );
 
       try {
@@ -304,6 +304,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
             body: jsonEncode(disease.toJson()),
           );
           if (response.statusCode == 200) {
+            if (!mounted) return;
             SystemUtils.showSnackBar(
               context,
               'Disease record updated successfully!',
@@ -321,6 +322,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
             body: jsonEncode(disease.toJson()),
           );
           if (response.statusCode == 201) {
+            if (!mounted) return;
             SystemUtils.showSnackBar(
               context,
               'Disease record added successfully!',
@@ -332,6 +334,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
         }
       } catch (e) {
         logger.e('Error saving/updating disease: $e');
+        if (!mounted) return;
         SystemUtils.showSnackBar(
           context,
           'Failed to save disease record. Please try again.',

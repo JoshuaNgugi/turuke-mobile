@@ -130,7 +130,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         ),
       );
     } finally {
-      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -139,8 +138,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
