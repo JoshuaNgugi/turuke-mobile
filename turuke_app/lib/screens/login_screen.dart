@@ -31,17 +31,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) {
-      return; // Stop if validation fails
+      return;
     }
 
-    // Ensure context is still mounted before setState
     if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Use the updated AuthProvider.login method that takes context
       await context.read<AuthProvider>().login(
         _emailController.text.trim(),
         _passwordController.text.trim(),
@@ -51,17 +49,13 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacementNamed(context, HomeScreen.routeName);
       }
     } catch (e) {
-      logger.e("Login Error: $e"); // Log the error
-      // Ensure context is still mounted before showing SnackBar
+      logger.e("Login Error: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               e.toString().contains('Exception:')
-                  ? e.toString().replaceFirst(
-                    'Exception: ',
-                    '',
-                  ) // Clean up error message
+                  ? e.toString().replaceFirst('Exception: ', '')
                   : 'An unexpected error occurred. Please try again.',
             ),
             backgroundColor: Colors.redAccent,
@@ -74,7 +68,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } finally {
-      // Ensure context is still mounted before setState
       if (mounted) {
         setState(() {
           _isLoading = false;
