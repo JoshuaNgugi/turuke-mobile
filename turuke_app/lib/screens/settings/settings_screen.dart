@@ -3,9 +3,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/screens/change_password_screen.dart';
-import 'package:turuke_app/screens/login_screen.dart';
-import 'package:turuke_app/screens/navigation_drawer_screen.dart';
+import 'package:turuke_app/screens/settings/change_password_screen.dart';
+import 'package:turuke_app/screens/login/login_screen.dart';
+import 'package:turuke_app/screens/navigation/navigation_drawer_screen.dart';
 import 'package:turuke_app/utils/system_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 

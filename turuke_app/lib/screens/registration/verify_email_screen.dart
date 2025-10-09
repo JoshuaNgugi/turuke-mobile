@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-import 'package:turuke_app/screens/registration_done_screen.dart';
+import 'package:turuke_app/screens/registration/registration_done_screen.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   static const String routeName = '/verify-email';

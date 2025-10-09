@@ -5,7 +5,7 @@ import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/screens/login_screen.dart';
+import 'package:turuke_app/screens/login/login_screen.dart';
 import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/system_utils.dart';
 

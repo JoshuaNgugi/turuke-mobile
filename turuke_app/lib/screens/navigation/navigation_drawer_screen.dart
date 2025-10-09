@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
-import 'package:turuke_app/screens/disease_log_screen.dart';
-import 'package:turuke_app/screens/egg_collection_list_screen.dart';
-import 'package:turuke_app/screens/flock_management_screen.dart';
+import 'package:turuke_app/screens/diseases/disease_log_screen.dart';
+import 'package:turuke_app/screens/egg_collection/egg_collection_list_screen.dart';
+import 'package:turuke_app/screens/flocks/flock_management_screen.dart';
 import 'package:turuke_app/screens/home_screen.dart';
-import 'package:turuke_app/screens/mortality_list_screen.dart';
-import 'package:turuke_app/screens/settings_screen.dart';
-import 'package:turuke_app/screens/user_management_screen.dart';
-import 'package:turuke_app/screens/vaccination_log_screen.dart';
+import 'package:turuke_app/screens/mortality/mortality_list_screen.dart';
+import 'package:turuke_app/screens/settings/settings_screen.dart';
+import 'package:turuke_app/screens/users/user_management_screen.dart';
+import 'package:turuke_app/screens/vaccinations/vaccination_log_screen.dart';
 
 class AppNavigationDrawer extends StatelessWidget {
   final String selectedRoute;
@@ -107,8 +107,8 @@ class AppNavigationDrawer extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          const Text(
-            'Turuke',
+          Text(
+            authProvider.user!.farmNameOrDefault,
             style: TextStyle(
               color: Colors.white,
               fontSize: 28,
@@ -122,7 +122,7 @@ class AppNavigationDrawer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  authProvider.user!.email,
+                  authProvider.user!.fullName,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -130,7 +130,7 @@ class AppNavigationDrawer extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  authProvider.user!.email,
+                  UserRole.getString(authProvider.user!.role),
                   style: const TextStyle(color: Colors.white60, fontSize: 14),
                 ),
               ],

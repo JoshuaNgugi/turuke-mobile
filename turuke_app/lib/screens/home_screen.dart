@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/providers/home_provider.dart';
-import 'package:turuke_app/screens/login_screen.dart';
-import 'package:turuke_app/screens/navigation_drawer_screen.dart';
+import 'package:turuke_app/screens/login/login_screen.dart';
+import 'package:turuke_app/screens/navigation/navigation_drawer_screen.dart';
 import 'package:turuke_app/utils/string_utils.dart';
 
 var logger = Logger(printer: PrettyPrinter());

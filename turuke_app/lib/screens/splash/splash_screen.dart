@@ -3,7 +3,7 @@ import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/home_screen.dart';
-import 'package:turuke_app/screens/login_screen.dart';
+import 'package:turuke_app/screens/login/login_screen.dart';
 import 'package:turuke_app/sync.dart';
 
 var logger = Logger(printer: PrettyPrinter());
