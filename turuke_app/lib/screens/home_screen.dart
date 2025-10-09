@@ -25,9 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      _fetchData();
-    });
+    _fetchData();
   }
 
   Future<void> _fetchData() async {

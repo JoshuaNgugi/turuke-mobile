@@ -29,7 +29,7 @@ class _AddEditDiseaseScreenState extends State<AddEditDiseaseScreen> {
 
   int? _flockId;
   DateTime _diagnosisDate = DateTime.now();
-  int _affectedCount = 0;
+  int? _affectedCount;
   String _notes = '';
   String _diseaseName = '';
 
@@ -87,8 +87,10 @@ class _AddEditDiseaseScreenState extends State<AddEditDiseaseScreen> {
 
     _diseaseNameController.text = _diseaseName;
     _diagnosisDateController.text = _dateFormat.format(_diagnosisDate);
-    _affectedCountController.text = _affectedCount.toString();
     _notesController.text = _notes;
+    if (_affectedCount != null) {
+      _affectedCountController.text = _affectedCount.toString();
+    }
   }
 
   Future<void> _fetchFlocks() async {
@@ -223,7 +225,7 @@ class _AddEditDiseaseScreenState extends State<AddEditDiseaseScreen> {
       if (mounted) {
         SystemUtils.showSnackBar(
           context,
-          'Failed to save disease record. Please check your internet connection and try again.',
+          'Failed to save disease record. Please try again later.',
         );
       }
     }
@@ -336,14 +338,24 @@ class _AddEditDiseaseScreenState extends State<AddEditDiseaseScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      SwitchListTile(
-                        title: const Text('Is entire flock affected?'),
-                        value: _isWholeFlockAffected,
-                        onChanged: (value) {
-                          setState(() {
-                            _isWholeFlockAffected = value;
-                          });
-                        },
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade700),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        child: SwitchListTile(
+                          title: const Text('Entire flock affected'),
+                          value: _isWholeFlockAffected,
+                          onChanged: (value) {
+                            setState(() {
+                              _isWholeFlockAffected = value;
+                            });
+                          },
+                        ),
                       ),
                       const SizedBox(height: 16),
                       if (!_isWholeFlockAffected)

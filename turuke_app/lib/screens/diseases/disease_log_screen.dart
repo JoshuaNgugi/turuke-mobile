@@ -31,12 +31,11 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
   List<Flock> _flocks = [];
 
   bool _isLoading = true;
-  final DateFormat _dateFormat = DateFormat('d MMMM, y');
 
   @override
   void initState() {
     super.initState();
-    _initializeData(); // Combine init and fetches
+    _initializeData();
   }
 
   Future<void> _initializeData() async {
@@ -96,7 +95,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
           final List<dynamic> jsonList = jsonDecode(diseasesRes.body);
           _diseases = jsonList.map((json) => Disease.fromJson(json)).toList();
 
-          setState(() {}); // Update UI with fetched diseases
+          setState(() {}); // Update UI
         } else {
           logger.w('Failed to fetch diseases (${diseasesRes.statusCode}).');
           if (mounted) {
@@ -216,7 +215,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                                         ),
                                       ),
                                       title: Text(
-                                        disease.name, // Disease name
+                                        disease.name,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -227,7 +226,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                                         children: [
                                           Text('Flock: $flockName'),
                                           Text(
-                                            'Affected: ${disease.affectedCount}',
+                                            'Affected: ${disease.affectedSummary}',
                                           ),
                                           Text('Onset: $diagnosisDateDisplay'),
                                           if (disease.notes != null &&
