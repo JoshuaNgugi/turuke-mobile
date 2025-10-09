@@ -8,6 +8,7 @@ class Disease {
   final int affectedCount;
   final String? notes;
   final String? flockName;
+  final bool? isWholeFlockAffected;
 
   Disease({
     this.id,
@@ -17,6 +18,7 @@ class Disease {
     required this.affectedCount,
     required this.notes,
     this.flockName,
+    this.isWholeFlockAffected = false,
   });
 
   factory Disease.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class Disease {
       affectedCount: json['affected_count'],
       notes: json['notes'],
       flockName: json['flock_name'],
+      isWholeFlockAffected: json['is_whole_flock_affected'],
     );
   }
 
@@ -39,6 +42,7 @@ class Disease {
       'diagnosis_date': diagnosisDate,
       'affected_count': affectedCount,
       'notes': notes,
+      'is_whole_flock_affected': isWholeFlockAffected,
     };
   }
 }

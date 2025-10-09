@@ -9,6 +9,7 @@ import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/disease.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
+import 'package:turuke_app/screens/diseases/add_edit_disease_screen.dart';
 import 'package:turuke_app/screens/navigation/navigation_drawer_screen.dart';
 import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/string_utils.dart';
@@ -121,241 +122,10 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
     }
   }
 
-  Future<void> _showAddEditDiseaseDialog({Disease? diseaseToEdit}) async {
-    final formKey = GlobalKey<FormState>();
-    int? flockId = diseaseToEdit?.flockId;
-    String diseaseName = diseaseToEdit?.name ?? '';
-    DateTime diagnosisDate =
-        diseaseToEdit != null
-            ? _dateFormat.parse(diseaseToEdit.diagnosisDate)
-            : DateTime.now();
-    int affectedCount = diseaseToEdit?.affectedCount ?? 0;
-    String notes = diseaseToEdit?.notes ?? '';
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateInDialog) {
-            return AlertDialog(
-              title: Text(
-                diseaseToEdit != null ? 'Edit Disease' : 'Add Disease',
-              ),
-              content: Form(
-                key: formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      DropdownButtonFormField<int>(
-                        decoration: _inputDecoration('Select Flock'),
-                        value: flockId,
-                        items:
-                            _flocks
-                                .map<DropdownMenuItem<int>>(
-                                  (flock) => DropdownMenuItem<int>(
-                                    value: flock.id,
-                                    child: Text(flock.name),
-                                  ),
-                                )
-                                .toList(),
-                        onChanged: (value) {
-                          setStateInDialog(() {
-                            flockId = value;
-                          });
-                        },
-                        validator:
-                            (value) =>
-                                value == null ? 'Flock is required' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        decoration: _inputDecoration('Disease Name'),
-                        validator:
-                            (value) =>
-                                value!.isEmpty
-                                    ? 'Disease Name is required'
-                                    : null,
-                        onChanged: (value) => diseaseName = value,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: TextEditingController(
-                          text: _dateFormat.format(diagnosisDate),
-                        ),
-                        decoration: _inputDecoration('Diagnosis Date'),
-                        readOnly: true,
-                        onTap: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: diagnosisDate,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime.now(),
-                            builder: (context, child) {
-                              return Theme(
-                                data: Theme.of(context).copyWith(
-                                  colorScheme: ColorScheme.light(
-                                    primary: Constants.kPrimaryColor,
-                                    onPrimary: Colors.white,
-                                    onSurface: Colors.black87,
-                                  ),
-                                  textButtonTheme: TextButtonThemeData(
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Constants.kPrimaryColor,
-                                    ),
-                                  ),
-                                ),
-                                child: child!,
-                              );
-                            },
-                          );
-                          if (picked != null) {
-                            setStateInDialog(() {
-                              diagnosisDate = picked;
-                            });
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        decoration: _inputDecoration('Affected Count'),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Affected Count is required';
-                          }
-                          if (int.tryParse(value) == null) {
-                            return 'Enter a valid number';
-                          }
-                          if (int.parse(value) < 0) {
-                            return 'Count cannot be negative';
-                          }
-                          return null;
-                        },
-                        onChanged:
-                            (value) => affectedCount = int.tryParse(value) ?? 0,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        decoration: _inputDecoration('Notes (Optional)'),
-                        maxLines: 3,
-                        onChanged: (value) => notes = value,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Constants.kPrimaryColor,
-                  ),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (formKey.currentState!.validate() && flockId != null) {
-                      Navigator.pop(context, true);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Constants.kPrimaryColor,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (result == true) {
-      if (!mounted) return;
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final farmId = authProvider.user?.farmId;
-
-      if (farmId == null) {
-        SystemUtils.showSnackBar(
-          context,
-          'Farm ID not available. Cannot save.',
-        );
-        return;
-      }
-
-      Disease disease = Disease(
-        flockId: flockId!,
-        name: diseaseName,
-        diagnosisDate: _dateFormat.format(diagnosisDate),
-        affectedCount: affectedCount,
-        notes: notes,
-      );
-
-      try {
-        Response response;
-        if (diseaseToEdit != null) {
-          response = await HttpClient.patch(
-            Uri.parse(
-              '${Constants.LAYERS_API_BASE_URL}/diseases/${diseaseToEdit.id}',
-            ),
-            headers: await authProvider.getHeaders(),
-            body: jsonEncode(disease.toJson()),
-          );
-          if (response.statusCode == 200) {
-            if (!mounted) return;
-            SystemUtils.showSnackBar(
-              context,
-              'Disease record updated successfully!',
-            );
-            await _fetchData();
-          } else {
-            throw Exception(
-              'Failed to update disease record: ${response.body}',
-            );
-          }
-        } else {
-          response = await HttpClient.post(
-            Uri.parse('${Constants.LAYERS_API_BASE_URL}/diseases'),
-            headers: await authProvider.getHeaders(),
-            body: jsonEncode(disease.toJson()),
-          );
-          if (response.statusCode == 201) {
-            if (!mounted) return;
-            SystemUtils.showSnackBar(
-              context,
-              'Disease record added successfully!',
-            );
-            await _fetchData();
-          } else {
-            throw Exception('Failed to add disease record: ${response.body}');
-          }
-        }
-      } catch (e) {
-        logger.e('Error saving/updating disease: $e');
-        if (!mounted) return;
-        SystemUtils.showSnackBar(
-          context,
-          'Failed to save disease record. Please try again.',
-        );
-      }
-    }
-  }
-
-  InputDecoration _inputDecoration(String labelText) {
-    return InputDecoration(
-      labelText: labelText,
-      border: const OutlineInputBorder(),
-      focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Constants.kPrimaryColor, width: 2.0),
-      ),
-      labelStyle: TextStyle(color: Constants.kPrimaryColor),
-    );
-  }
-
-  void _onRouteSelected(String route) {
-    Navigator.pushNamed(context, route);
+  void _onRouteSelected(String route, [Map<String, dynamic>? args]) {
+    Navigator.pushNamed(context, route, arguments: args).then((_) {
+      _fetchData();
+    });
   }
 
   @override
@@ -470,8 +240,9 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
                                         color: Colors.grey,
                                       ),
                                       onTap:
-                                          () => _showAddEditDiseaseDialog(
-                                            diseaseToEdit: disease,
+                                          () => _onRouteSelected(
+                                            AddEditDiseaseScreen.routeName,
+                                            {'disease': disease},
                                           ),
                                     ),
                                   );
@@ -486,7 +257,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
         onPressed:
             _flocks.isEmpty
                 ? () => SystemUtils.showEmptyFlocksWarning(context)
-                : () => _showAddEditDiseaseDialog(diseaseToEdit: null),
+                : () => _onRouteSelected(AddEditDiseaseScreen.routeName),
         backgroundColor: Constants.kPrimaryColor,
         foregroundColor: Colors.white,
         tooltip: 'Add Disease Record',
