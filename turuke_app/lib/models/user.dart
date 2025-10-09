@@ -21,6 +21,21 @@ class User {
     this.password,
   });
 
+  String get fullName {
+    final parts =
+        [firstName, lastName]
+            .where((name) => name != null && name.isNotEmpty)
+            .map((name) => name!)
+            .toList();
+    if (parts.isNotEmpty) return parts.join(' ');
+    // Fallback
+    return email;
+  }
+
+  String get farmNameOrDefault {
+    return (farmName?.trim().isNotEmpty ?? false) ? farmName!.trim() : 'Turuke';
+  }
+
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],
@@ -30,6 +45,7 @@ class User {
       role: json['role'],
       status: json['status'],
       farmId: json['farm_id'],
+      farmName: json['farm_name'],
     );
   }
 
