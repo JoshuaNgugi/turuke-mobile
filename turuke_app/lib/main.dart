@@ -9,7 +9,7 @@ import 'package:turuke_app/screens/settings/change_password_screen.dart';
 import 'package:turuke_app/screens/diseases/disease_log_screen.dart';
 import 'package:turuke_app/screens/egg_collection/egg_collection_list_screen.dart';
 import 'package:turuke_app/screens/egg_collection/egg_collection_screen.dart';
-import 'package:turuke_app/screens/flocks/flock_management_screen.dart';
+import 'package:turuke_app/screens/flocks/flock_list_screen.dart';
 import 'package:turuke_app/screens/home_screen.dart';
 import 'package:turuke_app/screens/login/login_screen.dart';
 import 'package:turuke_app/screens/mortality/mortality_list_screen.dart';
@@ -63,7 +63,7 @@ class TurukeAppState extends State<TurukeApp> {
         RegistrationDoneScreen.routeName:
             (ctx) => const RegistrationDoneScreen(),
         EggCollectionScreen.routeName: (ctx) => const EggCollectionScreen(),
-        FlockManagementScreen.routeName: (ctx) => const FlockManagementScreen(),
+        FlockListScreen.routeName: (ctx) => const FlockListScreen(),
         VaccinationLogScreen.routeName: (ctx) => const VaccinationLogScreen(),
         DiseaseLogScreen.routeName: (ctx) => const DiseaseLogScreen(),
         EggCollectionListScreen.routeName:

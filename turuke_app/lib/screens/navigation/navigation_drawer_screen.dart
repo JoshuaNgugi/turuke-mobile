@@ -4,7 +4,7 @@ import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/screens/diseases/disease_log_screen.dart';
 import 'package:turuke_app/screens/egg_collection/egg_collection_list_screen.dart';
-import 'package:turuke_app/screens/flocks/flock_management_screen.dart';
+import 'package:turuke_app/screens/flocks/flock_list_screen.dart';
 import 'package:turuke_app/screens/home_screen.dart';
 import 'package:turuke_app/screens/mortality/mortality_list_screen.dart';
 import 'package:turuke_app/screens/settings/settings_screen.dart';
@@ -51,7 +51,7 @@ class AppNavigationDrawer extends StatelessWidget {
             context,
             icon: Icons.pets,
             title: 'Flock Management',
-            routeName: FlockManagementScreen.routeName,
+            routeName: FlockListScreen.routeName,
           ),
           // Vaccination Log
           _buildDrawerItem(
