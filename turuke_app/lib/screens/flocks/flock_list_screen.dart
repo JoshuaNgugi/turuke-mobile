@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
+import 'package:turuke_app/screens/flocks/flock_management_screen.dart';
 import 'package:turuke_app/screens/navigation/navigation_drawer_screen.dart';
 import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/string_utils.dart';
@@ -16,7 +17,7 @@ import 'package:turuke_app/utils/system_utils.dart';
 var logger = Logger(printer: PrettyPrinter());
 
 class FlockListScreen extends StatefulWidget {
-  static const String routeName = '/flock-management';
+  static const String routeName = '/flock-list';
 
   const FlockListScreen({super.key});
 
@@ -95,6 +96,12 @@ class _FlockListScreenState extends State<FlockListScreen> {
   void _onRouteSelected(String route) {
     Navigator.pushNamed(context, route);
   }
+
+  // void _onRouteSelected(String route, [Map<String, dynamic>? args]) {
+  //   Navigator.pushNamed(context, route, arguments: args).then((_) {
+  //     _fetchData();
+  //   });
+  // }
 
   Future<void> _showAddEditFlockDialog({Flock? flockToEdit}) async {
     final formKey = GlobalKey<FormState>();
@@ -536,11 +543,10 @@ class _FlockListScreenState extends State<FlockListScreen> {
                                                       color: Colors.grey,
                                                     ),
                                                     onPressed:
-                                                        () =>
-                                                            _showAddEditFlockDialog(
-                                                              flockToEdit:
-                                                                  flock,
-                                                            ),
+                                                        () => _onRouteSelected(
+                                                          FlockManagementScreen
+                                                              .routeName,
+                                                        ),
                                                   ),
                                                   IconButton(
                                                     icon: const Icon(
@@ -561,8 +567,8 @@ class _FlockListScreenState extends State<FlockListScreen> {
                                               ),
                                       onTap:
                                           canModifyFlock
-                                              ? () => _showAddEditFlockDialog(
-                                                flockToEdit: flock,
+                                              ? () => _onRouteSelected(
+                                                FlockManagementScreen.routeName,
                                               )
                                               : null,
                                     ),
@@ -575,7 +581,7 @@ class _FlockListScreenState extends State<FlockListScreen> {
                 ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddEditFlockDialog(flockToEdit: null),
+        onPressed: () => _onRouteSelected(FlockManagementScreen.routeName),
         backgroundColor: Constants.kPrimaryColor,
         foregroundColor: Colors.white,
         tooltip: 'Add New Flock',
