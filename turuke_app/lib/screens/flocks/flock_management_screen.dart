@@ -99,7 +99,6 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
     _formKey.currentState!.save();
 
     setState(() => _isLoading = true);
-    Future.delayed(const Duration(seconds: 5));
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final farmId = authProvider.user?.farmId;
@@ -162,6 +161,66 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
     }
   }
 
+  Future<void> _showDeleteFlockDialog() async {
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Flock?'),
+            content: Text(
+              'Are you sure you want to delete flock "${_flockToEdit!.name}"? This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+    );
+
+    if (shouldDelete == true) {
+      await _deleteFlock(_flockToEdit!.id!);
+    }
+  }
+
+  Future<void> _deleteFlock(int flockId) async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    try {
+      final response = await HttpClient.delete(
+        Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks/$flockId'),
+        headers: await authProvider.getHeaders(),
+      );
+
+      if (mounted) {
+        if (response.statusCode == 200) {
+          SystemUtils.showSnackBar(context, 'Flock deleted successfully!');
+          Navigator.of(context).pop(true);
+        } else {
+          SystemUtils.showSnackBar(context, 'Failed to delete flock.');
+          logger.e('Failed to delete flock: ${response.body}');
+        }
+      }
+    } catch (e) {
+      logger.e('Error deleting flock: $e');
+      if (mounted) {
+        SystemUtils.showSnackBar(
+          context,
+          'Network error. Failed to delete flock.',
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   InputDecoration _inputDecoration(String labelText, String hintText) {
     return InputDecoration(
       labelText: labelText,
@@ -184,6 +243,26 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
         ),
         backgroundColor: Constants.kPrimaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          PopupMenuButton(
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem(
+                    onTap: _showDeleteFlockDialog,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.delete,
+                          color: Constants.kPrimaryColor,
+                        ),
+                        const SizedBox(width: 10),
+                        const Text("Delete"),
+                      ],
+                    ),
+                  ),
+                ],
+          ),
+        ],
       ),
       body: Stack(
         children: [
