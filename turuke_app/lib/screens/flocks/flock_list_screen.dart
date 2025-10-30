@@ -93,15 +93,11 @@ class _FlockListScreenState extends State<FlockListScreen> {
     }
   }
 
-  void _onRouteSelected(String route) {
-    Navigator.pushNamed(context, route);
+  void _onRouteSelected(String route, [Map<String, dynamic>? args]) {
+    Navigator.pushNamed(context, route, arguments: args).then((_) {
+      //_fetchData();
+    });
   }
-
-  // void _onRouteSelected(String route, [Map<String, dynamic>? args]) {
-  //   Navigator.pushNamed(context, route, arguments: args).then((_) {
-  //     _fetchData();
-  //   });
-  // }
 
   Future<void> _showAddEditFlockDialog({Flock? flockToEdit}) async {
     final formKey = GlobalKey<FormState>();
@@ -546,6 +542,7 @@ class _FlockListScreenState extends State<FlockListScreen> {
                                                         () => _onRouteSelected(
                                                           FlockManagementScreen
                                                               .routeName,
+                                                          {'flock': flock},
                                                         ),
                                                   ),
                                                   IconButton(
@@ -569,6 +566,7 @@ class _FlockListScreenState extends State<FlockListScreen> {
                                           canModifyFlock
                                               ? () => _onRouteSelected(
                                                 FlockManagementScreen.routeName,
+                                                {'flock': flock},
                                               )
                                               : null,
                                     ),

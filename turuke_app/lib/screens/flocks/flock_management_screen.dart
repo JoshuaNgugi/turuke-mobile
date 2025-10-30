@@ -32,6 +32,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
   Flock? _flockToEdit;
 
   late TextEditingController _nameController;
+  late TextEditingController _arrivalDateController;
   late TextEditingController _initialCountController;
   late TextEditingController _currentCountController;
 
@@ -45,6 +46,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController();
+    _arrivalDateController = TextEditingController();
     _initialCountController = TextEditingController();
     _currentCountController = TextEditingController();
   }
@@ -77,7 +79,8 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
     _currentCount = flock.currentCount;
     _initialCount = flock.initialCount;
 
-    _nameController.text = _dateFormat.format(_recordedDate);
+    _nameController.text = _flockName;
+    _arrivalDateController.text = flock.arrivalDate;
     _currentCountController.text = _currentCount.toString();
     _initialCountController.text = _initialCount.toString();
   }
@@ -184,7 +187,11 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
               ),
               const SizedBox(height: 16),
               TextFormField(
-                decoration: _inputDecoration('Arrival Date', ''),
+                controller: _arrivalDateController,
+                decoration: _inputDecoration(
+                  'Arrival Date',
+                  'The date this flock arrived',
+                ),
                 readOnly: true,
                 onTap: () async {
                   final picked = await showDatePicker(
@@ -213,17 +220,18 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                   if (picked != null && context.mounted) {
                     setState(() {
                       _arrivalDate = picked;
+                      _arrivalDateController.text = _dateFormat.format(picked);
                     });
                   }
                 },
-                controller: TextEditingController(
-                  text: _dateFormat.format(_arrivalDate),
-                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _initialCountController,
-                decoration: _inputDecoration('Initial Count', ''),
+                decoration: _inputDecoration(
+                  'Initial Count',
+                  'The initial number of chicks that arrived',
+                ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -239,7 +247,10 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _currentCountController,
-                decoration: _inputDecoration('Current Count', ''),
+                decoration: _inputDecoration(
+                  'Current Count',
+                  'The current number of chicken in this flock',
+                ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -267,6 +278,25 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
                     });
                   }
                 },
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _save,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Constants.kPrimaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    _flockToEdit != null ? 'Update Flock' : 'Add Flock',
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ),
               ),
             ],
           ),
