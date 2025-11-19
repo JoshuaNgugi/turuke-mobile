@@ -1,5 +1,3 @@
-import 'package:turuke_app/utils/string_utils.dart';
-
 class FlockPercentage {
   final int flockId;
   final String flockName;

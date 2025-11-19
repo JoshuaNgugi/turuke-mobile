@@ -26,7 +26,6 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
   final _formKey = GlobalKey<FormState>();
   final DateFormat _dateFormat = DateFormat('d MMMM, y');
 
-  int? _flockId;
   Flock? _flockToEdit;
 
   late TextEditingController _nameController;
