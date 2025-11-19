@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:turuke_app/models/monthly_yield.dart';
 import 'package:turuke_app/providers/home_provider.dart';
 import 'package:turuke_app/screens/login/login_screen.dart';
 import 'package:turuke_app/screens/navigation/navigation_drawer_screen.dart';
@@ -244,11 +245,10 @@ class _HomeScreenState extends State<HomeScreen> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: flockPercentages.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 250,
             crossAxisSpacing: 12.0,
             mainAxisSpacing: 12.0,
-            childAspectRatio: 1.2,
           ),
           itemBuilder: (context, index) {
             final flockData = flockPercentages[index];
@@ -310,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMonthlyYieldChart(
     List<String> availableMonths,
     String selectedMonth,
-    List<dynamic> monthlyYield,
+    List<MonthlyYield> monthlyYieldList,
     int actualDaysInMonth,
     Function refreshCallback,
   ) {
@@ -422,14 +422,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         showTitles: true,
                         reservedSize: 40,
                         interval:
-                            (monthlyYield.isNotEmpty
-                                    ? (monthlyYield
-                                            .map(
-                                              (e) => int.parse(
-                                                e['total_eggs']?.toString() ??
-                                                    '0',
-                                              ),
-                                            )
+                            (monthlyYieldList.isNotEmpty
+                                    ? (monthlyYieldList
+                                            .map((e) => e.totalEggs)
                                             .reduce((a, b) => a > b ? a : b)) /
                                         4
                                     : 10)
@@ -463,31 +458,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   maxX: actualDaysInMonth.toDouble(),
                   minY: 0,
                   maxY:
-                      monthlyYield.isNotEmpty
-                          ? (monthlyYield
-                                  .map(
-                                    (e) => int.parse(
-                                      e['total_eggs']?.toString() ?? '0',
-                                    ),
-                                  )
+                      monthlyYieldList.isNotEmpty
+                          ? (monthlyYieldList
+                                  .map((e) => e.totalEggs)
                                   .reduce((a, b) => a > b ? a : b)).toDouble() *
                               1.2
                           : 10,
                   lineBarsData: [
                     LineChartBarData(
                       spots:
-                          monthlyYield.map((entry) {
-                            final day = int.parse(
-                              entry['collection_date']
-                                  .split('-')[2]
-                                  .split('T')[0],
+                          monthlyYieldList.map((entry) {
+                            return FlSpot(
+                              entry.collectionDate.day.toDouble(),
+                              entry.totalEggs.toDouble(),
                             );
-                            final totalEggs =
-                                double.tryParse(
-                                  (entry['total_eggs'] ?? 0).toString(),
-                                ) ??
-                                0.0;
-                            return FlSpot(day.toDouble(), totalEggs);
                           }).toList(),
                       isCurved: true,
                       color: _primaryColor,
@@ -607,17 +591,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       _buildLegendItem(
                         Colors.green.shade600,
-                        'Current Chickens: ${current.toInt()}',
+                        'Current Chicken: ${current.toInt()}',
                       ),
                       const SizedBox(height: 8),
                       _buildLegendItem(
                         Colors.red.shade600,
-                        'Lost Chickens: ${lost.toInt()}',
+                        'Lost Chicken: ${lost.toInt()}',
                       ),
                       const SizedBox(height: 8),
                       _buildLegendItem(
                         Colors.grey.shade400,
-                        'Initial Chickens: ${initial.toInt()}',
+                        'Initial Chicken: ${initial.toInt()}',
                       ),
                     ],
                   ),

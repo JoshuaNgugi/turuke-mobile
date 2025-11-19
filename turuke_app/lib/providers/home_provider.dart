@@ -6,6 +6,7 @@ import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/egg_data.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/models/flock_percentage.dart';
+import 'package:turuke_app/models/monthly_yield.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
 import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/string_utils.dart';
@@ -22,8 +23,8 @@ class HomeProvider with ChangeNotifier {
   double _overallEggYieldPercent = 0;
   double get overallEggYieldPercent => _overallEggYieldPercent;
 
-  List<Map<String, dynamic>> _monthlyYield = []; // TODO: add model for this
-  List<Map<String, dynamic>> get monthlyYield => _monthlyYield;
+  List<MonthlyYield> _monthlyYield = [];
+  List<MonthlyYield> get monthlyYield => _monthlyYield;
 
   List<FlockPercentage> _flockPercentages = [];
   List<FlockPercentage> get flockPercentages => _flockPercentages;
@@ -37,7 +38,7 @@ class HomeProvider with ChangeNotifier {
   int _flockCount = 0;
   int get flockCount => _flockCount;
 
-  List<String> _availableMonths = SystemUtils.generateAvailableMonths();
+  final List<String> _availableMonths = SystemUtils.generateAvailableMonths();
   List<String> get availableMonths => _availableMonths;
 
   String? _errorMessage;
@@ -81,7 +82,7 @@ class HomeProvider with ChangeNotifier {
       _status = HomeDataStatus.loaded;
     } catch (e) {
       logger.e('Error fetching home stats: $e');
-      _errorMessage = 'Failed to load data: ${e.toString()}';
+      _errorMessage = 'Failed to load data. Something went wrong.';
       _status = HomeDataStatus.error;
     } finally {
       notifyListeners();
@@ -199,9 +200,12 @@ class HomeProvider with ChangeNotifier {
         headers: headers,
       );
       if (monthlyYieldRes.statusCode == 200) {
-        _monthlyYield = List<Map<String, dynamic>>.from(
-          jsonDecode(monthlyYieldRes.body)['data'],
+        final Map<String, dynamic> responseMap = jsonDecode(
+          monthlyYieldRes.body,
         );
+        final List<dynamic> jsonList = responseMap['data'];
+        _monthlyYield =
+            jsonList.map((json) => MonthlyYield.fromJson(json)).toList();
       } else {
         logger.e(
           'Failed to fetch monthly yield (${monthlyYieldRes.statusCode}): ${monthlyYieldRes.body}',
