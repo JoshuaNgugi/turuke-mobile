@@ -2,6 +2,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/models/monthly_yield.dart';
 import 'package:turuke_app/providers/home_provider.dart';
 import 'package:turuke_app/screens/login/login_screen.dart';
@@ -20,8 +22,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const Color _primaryColor = Color.fromARGB(255, 103, 2, 121);
-  static const Color _secondaryColor = Color.fromARGB(255, 150, 50, 170);
+  int? _selectedFlockId; // null means 'All Flocks'
+  List<Flock> _flocksForDropdown = [];
 
   @override
   void initState() {
@@ -86,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'Farm Dashboard',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: _primaryColor,
+        backgroundColor: Constants.kPrimaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
         elevation: 0,
@@ -111,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           if (homeProvider.status == HomeDataStatus.loading) {
             return const Center(
-              child: CircularProgressIndicator(color: _primaryColor),
+              child: CircularProgressIndicator(color: Constants.kPrimaryColor),
             );
           } else if (homeProvider.status == HomeDataStatus.error &&
               homeProvider.monthlyYield.isEmpty) {
@@ -136,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: const Icon(Icons.refresh),
                     label: const Text('Tap to Refresh'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _primaryColor,
+                      backgroundColor: Constants.kPrimaryColor,
                       foregroundColor: Colors.white,
                     ),
                   ),
@@ -146,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
           } else {
             return RefreshIndicator(
               onRefresh: _fetchData,
-              color: _primaryColor,
+              color: Constants.kPrimaryColor,
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -207,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: const TextStyle(
                   fontSize: 38,
                   fontWeight: FontWeight.w900,
-                  color: _primaryColor,
+                  color: Constants.kPrimaryColor,
                 ),
               ),
               const SizedBox(height: 4),
@@ -277,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: _secondaryColor,
+                        color: Constants.kSecondaryColor,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -319,8 +321,8 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
                 'Monthly Egg Yield Trend',
@@ -330,42 +332,88 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Colors.black87,
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.purple.shade50,
-                    labelText: 'Select Month',
-                    labelStyle: const TextStyle(color: _primaryColor),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<int?>(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.purple.shade50,
+                        labelText: 'Select Flock',
+                        labelStyle: const TextStyle(
+                          color: Constants.kPrimaryColor,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                      value: _selectedFlockId,
+                      items:
+                          _flocksForDropdown.map((flock) {
+                            return DropdownMenuItem<int?>(
+                              value: flock.id,
+                              child: Text(flock.name),
+                            );
+                          }).toList(),
+                      onChanged: (int? newValue) {
+                        if (newValue != _selectedFlockId) {
+                          setState(() {
+                            _selectedFlockId = newValue;
+                          });
+                          _fetchData();
+                        }
+                      },
+                      isExpanded: true,
                     ),
                   ),
-                  value: selectedMonth,
-                  items:
-                      availableMonths.map((String month) {
-                        return DropdownMenuItem<String>(
-                          value: month,
-                          child: Text(
-                            StringUtils.formatMonthDisplay(month),
-                            style: const TextStyle(color: Colors.black87),
-                          ),
-                        );
-                      }).toList(),
-                  onChanged: (String? newValue) {
-                    if (newValue != null && newValue != selectedMonth) {
-                      refreshCallback(month: newValue);
-                    }
-                  },
-                  isExpanded: true,
-                  dropdownColor: Colors.white,
-                ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.purple.shade50,
+                        labelText: 'Select Month',
+                        labelStyle: const TextStyle(
+                          color: Constants.kPrimaryColor,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                      value: selectedMonth,
+                      items:
+                          availableMonths.map((String month) {
+                            return DropdownMenuItem<String>(
+                              value: month,
+                              child: Text(
+                                StringUtils.formatMonthDisplay(month),
+                                style: const TextStyle(color: Colors.black87),
+                              ),
+                            );
+                          }).toList(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null && newValue != selectedMonth) {
+                          refreshCallback(month: newValue);
+                        }
+                      },
+                      isExpanded: true,
+                      dropdownColor: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -474,7 +522,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                           }).toList(),
                       isCurved: true,
-                      color: _primaryColor,
+                      color: Constants.kPrimaryColor,
                       barWidth: 3,
                       isStrokeCapRound: true,
                       dotData: FlDotData(
@@ -482,7 +530,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         getDotPainter:
                             (spot, percent, bar, index) => FlDotCirclePainter(
                               radius: 3,
-                              color: _primaryColor,
+                              color: Constants.kPrimaryColor,
                               strokeWidth: 1,
                               strokeColor: Colors.white,
                             ),
@@ -491,8 +539,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         show: true,
                         gradient: LinearGradient(
                           colors: [
-                            _primaryColor.withOpacity(0.3),
-                            _primaryColor.withOpacity(0.0),
+                            Constants.kPrimaryColor.withOpacity(0.3),
+                            Constants.kPrimaryColor.withOpacity(0.0),
                           ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,

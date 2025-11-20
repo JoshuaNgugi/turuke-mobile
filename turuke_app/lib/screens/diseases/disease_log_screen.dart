@@ -1,8 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/src/response.dart';
-import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:turuke_app/constants.dart';
@@ -69,7 +67,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
 
     try {
       final flocksRes = await HttpClient.get(
-        Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
+        Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/flocks?farm_id=$farmId'),
         headers: headers,
       );
       if (flocksRes.statusCode == 200) {
@@ -87,7 +85,7 @@ class _DiseaseLogScreenState extends State<DiseaseLogScreen> {
       }
 
       final diseasesRes = await HttpClient.get(
-        Uri.parse('${Constants.LAYERS_API_BASE_URL}/diseases?farm_id=$farmId'),
+        Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/diseases?farm_id=$farmId'),
         headers: headers,
       );
       if (mounted) {

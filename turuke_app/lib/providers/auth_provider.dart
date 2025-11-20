@@ -28,7 +28,7 @@ class AuthProvider with ChangeNotifier {
   // ===== REGISTER =====
   Future<void> register({required User user}) async {
     final response = await HttpClient.post(
-      Uri.parse('${Constants.API_BASE_URL}/auth/register'),
+      Uri.parse('${Constants.API_BASE_URL_V1}/auth/register'),
       headers: {'Content-Type': 'application/json'},
       body: user.toJson(),
     );
@@ -41,7 +41,7 @@ class AuthProvider with ChangeNotifier {
   // ===== LOGIN =====
   Future<void> login(String email, String password) async {
     final response = await HttpClient.post(
-      Uri.parse('${Constants.API_BASE_URL}/auth/login'),
+      Uri.parse('${Constants.API_BASE_URL_V1}/auth/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'password': password}),
     );
@@ -80,7 +80,7 @@ class AuthProvider with ChangeNotifier {
     if (refreshToken == null) return false;
 
     final response = await HttpClient.post(
-      Uri.parse('${Constants.API_BASE_URL}/auth/refresh'),
+      Uri.parse('${Constants.API_BASE_URL_V1}/auth/refresh'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'refreshToken': refreshToken}),
     );

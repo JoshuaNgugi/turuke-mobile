@@ -68,7 +68,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
 
     try {
       final flocksRes = await HttpClient.get(
-        Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
+        Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/flocks?farm_id=$farmId'),
         headers: headers,
       );
       if (flocksRes.statusCode == 200) {
@@ -86,7 +86,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
 
       final vaccinationsRes = await HttpClient.get(
         Uri.parse(
-          '${Constants.LAYERS_API_BASE_URL}/vaccinations?farm_id=$farmId',
+          '${Constants.LAYERS_API_BASE_URL_V1}/vaccinations?farm_id=$farmId',
         ),
         headers: headers,
       );
@@ -301,7 +301,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
       if (vaccinationToEdit != null) {
         response = await HttpClient.patch(
           Uri.parse(
-            '${Constants.LAYERS_API_BASE_URL}/vaccinations/${vaccinationToEdit.id}',
+            '${Constants.LAYERS_API_BASE_URL_V1}/vaccinations/${vaccinationToEdit.id}',
           ),
           headers: await authProvider.getHeaders(),
           body: jsonEncode(vaccination.toJson()),
@@ -319,7 +319,7 @@ class _VaccinationLogScreenState extends State<VaccinationLogScreen> {
         }
       } else {
         response = await HttpClient.post(
-          Uri.parse('${Constants.LAYERS_API_BASE_URL}/vaccinations'),
+          Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/vaccinations'),
           headers: await authProvider.getHeaders(),
           body: jsonEncode(vaccination.toJson()),
         );

@@ -121,7 +121,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
       if (_flockToEdit != null && _flockToEdit?.id != null) {
         response = await HttpClient.patch(
           Uri.parse(
-            '${Constants.LAYERS_API_BASE_URL}/flocks/${_flockToEdit?.id}',
+            '${Constants.LAYERS_API_BASE_URL_V1}/flocks/${_flockToEdit?.id}',
           ),
           headers: await authProvider.getHeaders(),
           body: jsonEncode(flock.toJson()),
@@ -135,7 +135,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
         }
       } else {
         response = await HttpClient.post(
-          Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks'),
+          Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/flocks'),
           headers: await authProvider.getHeaders(),
           body: jsonEncode(flock.toJson()),
         );
@@ -194,7 +194,7 @@ class _FlockManagementScreenState extends State<FlockManagementScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     try {
       final response = await HttpClient.delete(
-        Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks/$flockId'),
+        Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/flocks/$flockId'),
         headers: await authProvider.getHeaders(),
       );
 

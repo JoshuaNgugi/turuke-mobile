@@ -48,7 +48,7 @@ class HomeProvider with ChangeNotifier {
 
   HomeProvider(this._authProvider);
 
-  Future<void> fetchHomeStats({String? month}) async {
+  Future<void> fetchHomeStats({String? month, int? flockId}) async {
     _status = HomeDataStatus.loading;
     _errorMessage = null;
     notifyListeners();
@@ -76,7 +76,7 @@ class HomeProvider with ChangeNotifier {
 
       await _fetchOverallEggYield(farmId!, headers, yesterday);
       await _fetchFlockDataAndPercentages(farmId, headers, yesterday);
-      await _fetchMonthlyYield(farmId, headers, monthToFetch);
+      await _fetchMonthlyYield(farmId, headers, monthToFetch, flockId);
       await _fetchChickenStatus(farmId, headers);
 
       _status = HomeDataStatus.loaded;
@@ -97,7 +97,7 @@ class HomeProvider with ChangeNotifier {
     try {
       final eggYieldRes = await HttpClient.get(
         Uri.parse(
-          '${Constants.LAYERS_API_BASE_URL}/stats/egg-yield?farm_id=$farmId&date=$date',
+          '${Constants.LAYERS_API_BASE_URL_V1}/stats/egg-yield?farm_id=$farmId&date=$date',
         ),
         headers: headers,
       );
@@ -123,7 +123,7 @@ class HomeProvider with ChangeNotifier {
   ) async {
     try {
       final flocksRes = await HttpClient.get(
-        Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
+        Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/flocks?farm_id=$farmId'),
         headers: headers,
       );
       List<Flock> flocks = [];
@@ -144,7 +144,7 @@ class HomeProvider with ChangeNotifier {
 
       final eggRes = await HttpClient.get(
         Uri.parse(
-          '${Constants.LAYERS_API_BASE_URL}/egg-production?farm_id=$farmId&collection_date=$date',
+          '${Constants.LAYERS_API_BASE_URL_V1}/egg-production?farm_id=$farmId&collection_date=$date',
         ),
         headers: headers,
       );
@@ -191,12 +191,16 @@ class HomeProvider with ChangeNotifier {
     int farmId,
     Map<String, String> headers,
     String month,
+    int? flockId,
   ) async {
     try {
+      String queryString =
+          '${Constants.LAYERS_API_BASE_URL_V2}/stats/monthly-yield?farm_id=$farmId&month=$month';
+      if (flockId != null) {
+        queryString += '&flock_id=$flockId';
+      }
       final monthlyYieldRes = await HttpClient.get(
-        Uri.parse(
-          '${Constants.LAYERS_API_BASE_URL}/stats/monthly-yield?farm_id=$farmId&month=$month',
-        ),
+        Uri.parse(queryString),
         headers: headers,
       );
       if (monthlyYieldRes.statusCode == 200) {
@@ -225,7 +229,7 @@ class HomeProvider with ChangeNotifier {
     try {
       final chickenStatusRes = await HttpClient.get(
         Uri.parse(
-          '${Constants.LAYERS_API_BASE_URL}/stats/chicken-status?farm_id=$farmId',
+          '${Constants.LAYERS_API_BASE_URL_V1}/stats/chicken-status?farm_id=$farmId',
         ),
         headers: headers,
       );

@@ -114,7 +114,7 @@ class _AddEditDiseaseScreenState extends State<AddEditDiseaseScreen> {
 
     try {
       final response = await HttpClient.get(
-        Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
+        Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/flocks?farm_id=$farmId'),
         headers: headers,
       );
       if (response.statusCode == 200) {
@@ -180,7 +180,7 @@ class _AddEditDiseaseScreenState extends State<AddEditDiseaseScreen> {
       if (_diseaseToEdit != null) {
         response = await HttpClient.patch(
           Uri.parse(
-            '${Constants.LAYERS_API_BASE_URL}/diseases/${_diseaseToEdit!.id}',
+            '${Constants.LAYERS_API_BASE_URL_V1}/diseases/${_diseaseToEdit!.id}',
           ),
           headers: headers,
           body: jsonEncode(disease.toJson()),
@@ -201,7 +201,7 @@ class _AddEditDiseaseScreenState extends State<AddEditDiseaseScreen> {
         }
       } else {
         response = await HttpClient.post(
-          Uri.parse('${Constants.LAYERS_API_BASE_URL}/diseases'),
+          Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/diseases'),
           headers: headers,
           body: jsonEncode(disease.toJson()),
         );

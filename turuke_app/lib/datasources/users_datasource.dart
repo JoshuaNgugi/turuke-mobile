@@ -15,8 +15,8 @@ class UsersDataSource extends DataTableSource {
     final user = _users[index];
     return DataRow(
       onSelectChanged: (selected) {
-        if (selected == true && onSelect != null) {
-          onSelect(user); // Trigger onSelect when row is tapped
+        if (selected == true) {
+          onSelect(user);
         }
       },
       cells: [

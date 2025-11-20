@@ -66,7 +66,7 @@ class _FlockListScreenState extends State<FlockListScreen> {
 
     try {
       final response = await HttpClient.get(
-        Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
+        Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/flocks?farm_id=$farmId'),
         headers: await authProvider.getHeaders(),
       );
       if (mounted) {

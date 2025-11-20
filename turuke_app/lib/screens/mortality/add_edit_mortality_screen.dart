@@ -105,7 +105,7 @@ class _AddEditMortalityScreenState extends State<AddEditMortalityScreen> {
 
     try {
       final response = await HttpClient.get(
-        Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
+        Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/flocks?farm_id=$farmId'),
         headers: headers,
       );
       if (response.statusCode == 200) {
@@ -169,7 +169,7 @@ class _AddEditMortalityScreenState extends State<AddEditMortalityScreen> {
       if (_mortalityToEdit != null) {
         response = await HttpClient.patch(
           Uri.parse(
-            '${Constants.LAYERS_API_BASE_URL}/mortality/${_mortalityToEdit!.id}',
+            '${Constants.LAYERS_API_BASE_URL_V1}/mortality/${_mortalityToEdit!.id}',
           ),
           headers: headers,
           body: jsonEncode(mortality.toJson()),
@@ -190,7 +190,7 @@ class _AddEditMortalityScreenState extends State<AddEditMortalityScreen> {
         }
       } else {
         response = await HttpClient.post(
-          Uri.parse('${Constants.LAYERS_API_BASE_URL}/mortality'),
+          Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/mortality'),
           headers: headers,
           body: jsonEncode(mortality.toJson()),
         );

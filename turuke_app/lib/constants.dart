@@ -3,22 +3,30 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class Constants {
-  static const String API_PREFIX = '/api/v1';
+  static const String API_PREFIX_V1 = '/api/v1';
+  static const String API_PREFIX_V2 = '/api/v2';
 
-  static const String API_BASE_URL = 'https://api.turuke.co.ke$API_PREFIX';
+  static const String API_BASE_URL = 'https://api.turuke.co.ke';
 
-  static const String LAYERS_API_BASE_URL =
-      '$API_BASE_URL/animals/chicken/layers';
+  static const String API_BASE_URL_V1 = '$API_BASE_URL + $API_PREFIX_V1';
+  static const String API_BASE_URL_V2 = '$API_BASE_URL + $API_PREFIX_V2';
 
-  static const String USERS_API_BASE_URL = '$API_BASE_URL/users';
+  static const String LAYERS_API_BASE_URL_V1 =
+      '$API_BASE_URL_V1/animals/chicken/layers';
+  static const String LAYERS_API_BASE_URL_V2 =
+      '$API_BASE_URL_V2/animals/chicken/layers';
 
-  static const String TERMS_OF_SERVICE_URL = 'https://www.turuke.co.ke/terms.html';
+  static const String USERS_API_BASE_URL = '$API_BASE_URL_V1/users';
+
+  static const String TERMS_OF_SERVICE_URL =
+      'https://www.turuke.co.ke/terms.html';
 
   static const String PRIVACY_POLICY =
       'https://www.turuke.co.ke/privacy-policy.html';
 
   // Primary color for main branding
   static const Color kPrimaryColor = Color.fromARGB(255, 103, 2, 121);
+  static const Color kSecondaryColor = Color.fromARGB(255, 150, 50, 170);
 
   // Accent color for secondary elements, buttons, highlights
   static const Color kAccentColor = Color.fromARGB(255, 3, 219, 198);

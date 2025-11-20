@@ -95,7 +95,7 @@ Future<void> syncPendingData(BuildContext context, Database db) async {
       for (var entry in entries) {
         try {
           final response = await HttpClient.post(
-            Uri.parse('${Constants.API_BASE_URL}/$apiEndpoint'),
+            Uri.parse('${Constants.API_BASE_URL_V1}/$apiEndpoint'),
             headers: headers,
             body: jsonEncode(getBody(entry)),
           );
@@ -201,7 +201,7 @@ Future<void> syncPendingData(BuildContext context, Database db) async {
   for (var user in pendingUsers) {
     try {
       final response = await HttpClient.post(
-        Uri.parse('${Constants.API_BASE_URL}/users'),
+        Uri.parse('${Constants.API_BASE_URL_V1}/users'),
         headers: headers,
         body: jsonEncode({
           'first_name': user['first_name'],

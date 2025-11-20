@@ -57,7 +57,7 @@ class _MortalityListScreenState extends State<MortalityListScreen> {
 
     try {
       final flocksRes = await HttpClient.get(
-        Uri.parse('${Constants.LAYERS_API_BASE_URL}/flocks?farm_id=$farmId'),
+        Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/flocks?farm_id=$farmId'),
         headers: headers,
       );
       if (flocksRes.statusCode == 200) {
@@ -76,7 +76,7 @@ class _MortalityListScreenState extends State<MortalityListScreen> {
       }
 
       String mortalityUrl =
-          '${Constants.LAYERS_API_BASE_URL}/mortality?farm_id=$farmId';
+          '${Constants.LAYERS_API_BASE_URL_V1}/mortality?farm_id=$farmId';
 
       final mortalityRes = await HttpClient.get(
         Uri.parse(mortalityUrl),
