@@ -21,6 +21,7 @@ import 'package:turuke_app/screens/splash/splash_screen.dart';
 import 'package:turuke_app/screens/users/user_management_screen.dart';
 import 'package:turuke_app/screens/vaccinations/vaccination_log_screen.dart';
 import 'package:turuke_app/screens/registration/verify_email_screen.dart';
+import 'package:turuke_app/services/connectivity_service.dart';
 
 void main() {
   runApp(
@@ -34,6 +35,7 @@ void main() {
               ),
           update: (context, auth, previousHome) => HomeProvider(auth),
         ),
+        ChangeNotifierProvider(create: (context) => ConnectivityService()),
       ],
       child: const TurukeApp(),
     ),
