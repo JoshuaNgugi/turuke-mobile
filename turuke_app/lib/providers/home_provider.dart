@@ -48,6 +48,11 @@ class HomeProvider with ChangeNotifier {
 
   HomeProvider(this._authProvider);
 
+  List<Flock> _flocks = [];
+  List<Flock> get flocksForDropdown {
+    return [SystemUtils.createAllFlocksOption(), ..._flocks];
+  }
+
   Future<void> fetchHomeStats({String? month, int? flockId}) async {
     _status = HomeDataStatus.loading;
     _errorMessage = null;
@@ -126,15 +131,14 @@ class HomeProvider with ChangeNotifier {
         Uri.parse('${Constants.LAYERS_API_BASE_URL_V1}/flocks?farm_id=$farmId'),
         headers: headers,
       );
-      List<Flock> flocks = [];
       if (flocksRes.statusCode == 200) {
         final List<dynamic> jsonList = jsonDecode(flocksRes.body);
-        flocks =
+        _flocks =
             jsonList
                 .map((json) => Flock.fromJson(json))
                 .where((flock) => flock.status == 1)
                 .toList();
-        _flockCount = flocks.length;
+        _flockCount = _flocks.length;
       } else {
         logger.e(
           'Failed to fetch flocks (${flocksRes.statusCode}): ${flocksRes.body}',
@@ -160,7 +164,7 @@ class HomeProvider with ChangeNotifier {
       }
 
       _flockPercentages =
-          flocks.map((flock) {
+          _flocks.map((flock) {
             final eggData = eggs.firstWhere(
               (eggData) => eggData.flockId == flock.id!,
               orElse: () => EggData.empty(),

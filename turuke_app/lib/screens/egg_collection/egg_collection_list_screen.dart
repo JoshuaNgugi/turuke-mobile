@@ -61,7 +61,7 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
         setState(() {
           _isLoading = false;
           _eggCollections = [];
-          _flocksForDropdown = [_createAllFlocksOption()];
+          _flocksForDropdown = [SystemUtils.createAllFlocksOption()];
         });
       }
       if (!mounted) return;
@@ -123,25 +123,11 @@ class _EggCollectionListScreenState extends State<EggCollectionListScreen> {
     }
   }
 
-  Flock _createAllFlocksOption() {
-    return Flock(
-      id: null,
-      farmId: 0,
-      name: 'All Flocks',
-      arrivalDate: DateTime.now().toIso8601String(),
-      initialCount: 0,
-      currentCount: 0,
-      ageWeeks: 0,
-      status: 0,
-      currentAgeWeeks: 0,
-    );
-  }
-
   Future<void> _fetchFlocksAndPrepareDropdown(
     int farmId,
     Map<String, String> headers,
   ) async {
-    Flock allFlocks = _createAllFlocksOption();
+    Flock allFlocks = SystemUtils.createAllFlocksOption();
 
     try {
       final flocksRes = await HttpClient.get(

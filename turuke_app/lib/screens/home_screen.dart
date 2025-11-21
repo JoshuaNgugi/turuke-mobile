@@ -23,7 +23,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int? _selectedFlockId; // null means 'All Flocks'
-  List<Flock> _flocksForDropdown = [];
 
   @override
   void initState() {
@@ -164,8 +163,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     _buildMonthlyYieldChart(
                       homeProvider.availableMonths,
-                      homeProvider.selectedMonth,
                       homeProvider.monthlyYield,
+                      homeProvider.flocksForDropdown,
+                      homeProvider.selectedMonth,
                       actualDaysInMonth,
                       homeProvider.fetchHomeStats,
                     ),
@@ -311,8 +311,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildMonthlyYieldChart(
     List<String> availableMonths,
-    String selectedMonth,
     List<MonthlyYield> monthlyYieldList,
+    List<Flock> flockList,
+    String selectedMonth,
     int actualDaysInMonth,
     Function refreshCallback,
   ) {
@@ -357,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       value: _selectedFlockId,
                       items:
-                          _flocksForDropdown.map((flock) {
+                          flockList.map((flock) {
                             return DropdownMenuItem<int?>(
                               value: flock.id,
                               child: Text(flock.name),
@@ -365,10 +366,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           }).toList(),
                       onChanged: (int? newValue) {
                         if (newValue != _selectedFlockId) {
-                          setState(() {
-                            _selectedFlockId = newValue;
-                          });
-                          _fetchData();
+                          _selectedFlockId = newValue;
+                          refreshCallback(flockId: _selectedFlockId);
                         }
                       },
                       isExpanded: true,

@@ -8,8 +8,8 @@ class Constants {
 
   static const String API_BASE_URL = 'https://api.turuke.co.ke';
 
-  static const String API_BASE_URL_V1 = '$API_BASE_URL + $API_PREFIX_V1';
-  static const String API_BASE_URL_V2 = '$API_BASE_URL + $API_PREFIX_V2';
+  static const String API_BASE_URL_V1 = API_BASE_URL + API_PREFIX_V1;
+  static const String API_BASE_URL_V2 = API_BASE_URL + API_PREFIX_V2;
 
   static const String LAYERS_API_BASE_URL_V1 =
       '$API_BASE_URL_V1/animals/chicken/layers';

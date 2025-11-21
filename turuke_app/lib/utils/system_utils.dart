@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:turuke_app/models/flock.dart';
 
 class SystemUtils {
   static List<String> generateAvailableMonths() {
@@ -52,6 +53,20 @@ class SystemUtils {
     SystemUtils.showSnackBar(
       context,
       'No flocks available. Please add a flock before adding record.',
+    );
+  }
+
+  static Flock createAllFlocksOption() {
+    return Flock(
+      id: null,
+      farmId: 0,
+      name: 'All Flocks',
+      arrivalDate: DateTime.now().toIso8601String(),
+      initialCount: 0,
+      currentCount: 0,
+      ageWeeks: 0,
+      status: 0,
+      currentAgeWeeks: 0,
     );
   }
 }
