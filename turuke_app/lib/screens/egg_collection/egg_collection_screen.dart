@@ -7,6 +7,8 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:turuke_app/constants.dart';
+import 'package:turuke_app/core/errors/error_mapper.dart';
+import 'package:turuke_app/core/exceptions/api_exception.dart';
 import 'package:turuke_app/models/egg_data.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
@@ -263,16 +265,18 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
           Navigator.pop(context, true);
         }
       } else {
-        throw Exception(
-          'API Save Failed: ${response.statusCode} - ${response.body}',
+        throw ApiException(
+          response.statusCode,
+          response.body,
+          'API Save Failed: ${response.statusCode}',
         );
       }
     } catch (e) {
-      logger.e('Error saving online: $e. Attempting offline save.');
+      logger.e('Unexpected error occurred: $e');
       if (mounted) {
         SystemUtils.showSnackBar(
           context,
-          'Error: ${e.toString()}',
+          ErrorMapper.mapErrorToUserMessage(e),
           backgroundColor: Colors.red,
         );
       }
