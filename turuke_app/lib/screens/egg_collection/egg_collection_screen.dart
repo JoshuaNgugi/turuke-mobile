@@ -10,6 +10,7 @@ import 'package:turuke_app/constants.dart';
 import 'package:turuke_app/models/egg_data.dart';
 import 'package:turuke_app/models/flock.dart';
 import 'package:turuke_app/providers/auth_provider.dart';
+import 'package:turuke_app/services/connectivity_service.dart';
 import 'package:turuke_app/utils/http_client.dart';
 import 'package:turuke_app/utils/system_utils.dart';
 import 'package:uuid/uuid.dart';
@@ -112,6 +113,10 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
   Future<void> _fetchFlocks() async {
     if (!mounted) return;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final connectivityService = Provider.of<ConnectivityService>(
+      context,
+      listen: false,
+    );
     final farmId = authProvider.user?.farmId;
 
     if (farmId == null) {
@@ -122,6 +127,12 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
           'Farm ID not available. Cannot load flocks.',
         );
       }
+      return;
+    }
+
+    if (!connectivityService.hasInternetConnection) {
+      logger.i('User is offline.');
+      await _loadOfflineFlocks();
       return;
     }
 
@@ -145,7 +156,7 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
         await _loadOfflineFlocks();
       }
     } catch (e) {
-      logger.e('Error fetching flocks online: $e. Falling back to offline.');
+      logger.e('Error fetching flocks online: $e');
       await _loadOfflineFlocks();
     }
   }
@@ -203,14 +214,10 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
       return;
     }
 
-    if (_db == null) {
-      await _initDb();
-      if (_db == null) {
-        if (!mounted) return;
-        SystemUtils.showSnackBar(context, 'Database not ready. Cannot save.');
-        return;
-      }
-    }
+    final connectivityService = Provider.of<ConnectivityService>(
+      context,
+      listen: false,
+    );
 
     final data = {
       'flock_id': _flockId,
@@ -218,6 +225,13 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
       'whole_eggs': _wholeEggs,
       'broken_eggs': _brokenEggs,
     };
+
+    if (!connectivityService.hasInternetConnection) {
+      logger.i("User is offline");
+      _saveOffline(data);
+      return;
+    }
+
     if (!mounted) return;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
@@ -255,28 +269,47 @@ class _EggCollectionScreenState extends State<EggCollectionScreen> {
       }
     } catch (e) {
       logger.e('Error saving online: $e. Attempting offline save.');
-      final String id =
-          _collectionId ??
-          const Uuid().v4(); // Reuse ID if editing, else new UUID
-      await _db!.insert(
-        'egg_pending',
-        {
-          'id': id,
-          ...data,
-          'is_synced': 0, // Mark as not synced
-        },
-        conflictAlgorithm:
-            ConflictAlgorithm
-                .replace, // Replace if editing existing offline entry
-      );
       if (mounted) {
         SystemUtils.showSnackBar(
           context,
-          'Saved offline. Data will sync when connected.',
-          backgroundColor: Colors.orange,
+          'Error: ${e.toString()}',
+          backgroundColor: Colors.red,
         );
-        Navigator.pop(context, true);
       }
+    }
+  }
+
+  Future<void> _saveOffline(Map<String, Object?> data) async {
+    if (_db == null) {
+      await _initDb();
+      if (_db == null) {
+        if (!mounted) return;
+        SystemUtils.showSnackBar(context, 'Database not ready. Cannot save.');
+        return;
+      }
+    }
+
+    final String id =
+        _collectionId ??
+        const Uuid().v4(); // Reuse ID if editing, else new UUID
+    await _db!.insert(
+      'egg_pending',
+      {
+        'id': id,
+        ...data,
+        'is_synced': 0, // Mark as not synced
+      },
+      conflictAlgorithm:
+          ConflictAlgorithm
+              .replace, // Replace if editing existing offline entry
+    );
+    if (mounted) {
+      SystemUtils.showSnackBar(
+        context,
+        'Saved offline. Data will sync when connected.',
+        backgroundColor: Colors.orange,
+      );
+      Navigator.pop(context, true);
     }
   }
 
